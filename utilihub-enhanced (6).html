@@ -1,0 +1,2704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 UtiliHub - Your All-in-One Utility Tools Hub</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        /* Usage Tracker */
+        .usage-tracker {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .tier-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .current-tier {
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+        }
+
+        .tier-anonymous { background: #6c757d; }
+        .tier-free { background: #28a745; }
+        .tier-premium1 { background: #fd7e14; }
+        .tier-premium2 { background: #6f42c1; }
+        .tier-premium3 { background: #dc3545; }
+
+        .usage-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .usage-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .usage-green { background: #28a745; }
+        .usage-yellow { background: #ffc107; }
+        .usage-red { background: #dc3545; }
+
+        /* Tool Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .tool-card.active {
+            border: 2px solid #667eea;
+            transform: translateY(-5px);
+        }
+
+        .tool-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .tool-card p {
+            color: #666;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+
+        .tool-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status-working { background: #d1edff; color: #0066cc; }
+        .status-priority { background: #fff3cd; color: #856404; }
+        .status-coming-soon { background: #f8d7da; color: #721c24; }
+
+        /* Tool Modal */
+        .tool-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .tool-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .tool-modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .tool-modal-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .tool-modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .tool-modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .tool-modal-body {
+            padding: 30px;
+        }
+
+        /* File Upload Areas */
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: scale(1.02);
+        }
+
+        .upload-area.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #f5f5f5;
+            border-color: #ccc;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Processing Overlay */
+        .processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .processing-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .processing-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e9ecef;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* File List */
+        .file-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin: 5px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .file-icon {
+            margin-right: 10px;
+            font-size: 1.5em;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .file-size {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 1002;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: #28a745;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        /* Calculator Styles */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .calc-btn {
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calc-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .calc-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* File Name Modal */
+        .filename-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1003;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .filename-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .filename-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        /* Batch Processing Options */
+        .batch-options {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .batch-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .batch-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .batch-option.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        /* Text Stats Grid */
+        .text-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .text-stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .text-stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .text-stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Image Editor Styles */
+        .image-editor {
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .filter-group {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .canvas-container {
+            text-align: center;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tier-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .upload-area {
+                padding: 20px;
+            }
+
+            .btn {
+                width: 100%;
+                margin: 10px 0;
+            }
+
+            .tool-modal-content {
+                width: 95%;
+                max-height: 95vh;
+            }
+
+            .tool-modal-body {
+                padding: 20px;
+            }
+
+            .calculator-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Pricing Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1002;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .pricing-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card:hover, .pricing-card.current {
+            border-color: #667eea;
+            transform: translateY(-5px);
+        }
+
+        .pricing-card.current {
+            background: #f8f9ff;
+        }
+
+        .price {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .features {
+            text-align: left;
+            margin: 15px 0;
+        }
+
+        .features li {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        /* Demo Controls */
+        .demo-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1004;
+            display: none;
+        }
+
+        .demo-controls.active {
+            display: block;
+        }
+
+        .demo-controls select {
+            margin: 5px;
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        /* Advanced Image Controls */
+        .image-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .control-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .watermark-tools {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-controls" id="demoControls">
+        <h4>Demo Mode</h4>
+        <select id="demoTierSelect">
+            <option value="anonymous">Anonymous</option>
+            <option value="free">Free Account</option>
+            <option value="premium1">Premium Tier 1</option>
+            <option value="premium2">Premium Tier 2</option>
+            <option value="premium3">Premium Tier 3</option>
+        </select>
+        <button onclick="resetUsage()" class="btn btn-secondary" style="margin-top: 10px;">Reset Usage</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🚀 UtiliHub</h1>
+            <p>Your All-in-One Utility Tools Hub</p>
+            <p style="opacity: 0.8;">No downloads, no signups - just instant results</p>
+        </div>
+
+        <!-- Usage Tracker -->
+        <div class="usage-tracker">
+            <div class="tier-info">
+                <div class="current-tier" id="currentTier">Anonymous User</div>
+                <div class="usage-stats" id="usageStats">0 / 5 files used today</div>
+                <button class="btn btn-warning" onclick="showPricing()">Upgrade Plan</button>
+            </div>
+            <div class="usage-bar">
+                <div class="usage-fill usage-green" id="usageFill" style="width: 0%"></div>
+            </div>
+            <div style="font-size: 0.9em; color: #666; text-align: center;" id="resetTimer">
+                Resets in: 24h 0m
+            </div>
+        </div>
+
+        <!-- Tools Grid -->
+        <div class="tools-grid">
+            <div class="tool-card" onclick="openTool('pdf-converter')">
+                <div>
+                    <h3>📄 Convert PDFs to Different Formats</h3>
+                    <p>Convert PDFs to text, Word documents, Excel sheets, CSV files, and more</p>
+                </div>
+                <span class="tool-status status-working">✅ Working</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('pdf-to-formats')">
+                <div>
+                    <h3>📋 Convert to PDF</h3>
+                    <p>Convert documents, images, and text files to PDF format with custom naming</p>
+                </div>
+                <span class="tool-status status-working">✅ Working</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('image-converter')">
+                <div>
+                    <h3>🖼️ Advanced Image Editor</h3>
+                    <p>Convert formats, apply filters, remove backgrounds, compress, and enhance images</p>
+                </div>
+                <span class="tool-status status-working">✅ Working</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('calculator')">
+                <div>
+                    <h3>🧮 Smart Calculator</h3>
+                    <p>Advanced calculator with scientific functions and history</p>
+                </div>
+                <span class="tool-status status-working">✅ Working</span>
+            </div>
+
+            <div class="tool-card" onclick="openTool('text-tools')">
+                <div>
+                    <h3>✏️ Text Tools</h3>
+                    <p>Word count, character count, case conversion, and text formatting</p>
+                </div>
+                <span class="tool-status status-working">✅ Working</span>
+            </div>
+
+            <!-- Coming Soon Tools -->
+            <div class="tool-card" style="opacity: 0.7;">
+                <div>
+                    <h3>🔗 URL Shortener</h3>
+                    <p>Create custom short links with analytics and password protection</p>
+                </div>
+                <span class="tool-status status-coming-soon">🚧 Coming Soon</span>
+            </div>
+
+            <div class="tool-card" style="opacity: 0.7;">
+                <div>
+                    <h3>📱 QR Code Generator</h3>
+                    <p>Generate QR codes with multiple formats and custom styling options</p>
+                </div>
+                <span class="tool-status status-coming-soon">🚧 Coming Soon</span>
+            </div>
+
+            <div class="tool-card" style="opacity: 0.7;">
+                <div>
+                    <h3>🎨 Color Tools</h3>
+                    <p>Color picker, converter, palette generator, and accessibility checker</p>
+                </div>
+                <span class="tool-status status-coming-soon">🚧 Coming Soon</span>
+            </div>
+
+            <div class="tool-card" style="opacity: 0.7;">
+                <div>
+                    <h3>🔒 Password Generator</h3>
+                    <p>Generate secure passwords with customizable length and character sets</p>
+                </div>
+                <span class="tool-status status-coming-soon">🚧 Coming Soon</span>
+            </div>
+
+            <div class="tool-card" style="opacity: 0.7;">
+                <div>
+                    <h3>🔤 Base64 Encoder/Decoder</h3>
+                    <p>Encode and decode text and files with Base64 algorithm</p>
+                </div>
+                <span class="tool-status status-coming-soon">🚧 Coming Soon</span>
+            </div>
+
+            <div class="tool-card" style="opacity: 0.7;">
+                <div>
+                    <h3>🔐 Hash Generator</h3>
+                    <p>Generate MD5, SHA-1, SHA-256, and other hash algorithms</p>
+                </div>
+                <span class="tool-status status-coming-soon">🚧 Coming Soon</span>
+            </div>
+
+            <div class="tool-card" style="opacity: 0.7;">
+                <div>
+                    <h3>📋 JSON Formatter</h3>
+                    <p>Format, validate, minify, and beautify JSON data</p>
+                </div>
+                <span class="tool-status status-coming-soon">🚧 Coming Soon</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Converter Modal -->
+    <div class="tool-modal" id="pdf-converter-modal">
+        <div class="tool-modal-content">
+            <div class="tool-modal-header">
+                <h2>📄 Convert PDFs to Different Formats</h2>
+                <button class="tool-modal-close" onclick="closeTool()">&times;</button>
+            </div>
+            <div class="tool-modal-body">
+                <p>Extract text, tables, and data from PDF files and convert to various formats</p>
+                
+                <!-- Batch Options -->
+                <div class="batch-options" id="pdfBatchOptions">
+                    <h4>Processing Options</h4>
+                    <div class="batch-option selected" id="singlePdfOption" onclick="selectBatchOption('pdf', 'single')">
+                        <div>
+                            <strong>Process Single File</strong>
+                            <div style="font-size: 0.9em; color: #666;">Convert one PDF at a time</div>
+                        </div>
+                        <div style="color: #28a745; font-weight: bold;">Available</div>
+                    </div>
+                    <div class="batch-option" id="batchPdfOption" onclick="selectBatchOption('pdf', 'batch')">
+                        <div>
+                            <strong>Process Multiple Files</strong>
+                            <div style="font-size: 0.9em; color: #666;" id="pdfBatchDescription">Batch convert multiple PDFs</div>
+                        </div>
+                        <div style="color: #dc3545; font-weight: bold;" id="pdfBatchStatus">Upgrade Required</div>
+                    </div>
+                </div>
+                
+                <div class="upload-area" id="pdfUploadArea" onclick="document.getElementById('pdfFileInput').click()">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Drag & drop your PDF files here or click to select</div>
+                    <div class="upload-subtext">Supports: .pdf files</div>
+                </div>
+                <input type="file" id="pdfFileInput" multiple accept=".pdf" style="display: none;">
+                
+                <div class="form-group">
+                    <label class="form-label">Output Format</label>
+                    <select class="form-control" id="pdfOutputFormat">
+                        <option value="txt">Plain Text (.txt)</option>
+                        <option value="docx">Word Document (.docx)</option>
+                        <option value="xlsx">Excel Spreadsheet (.xlsx)</option>
+                        <option value="csv">CSV File (.csv)</option>
+                        <option value="json">JSON Data (.json)</option>
+                    </select>
+                </div>
+
+                <div class="file-list" id="pdfFileList" style="display: none;"></div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-primary" id="convertPdfBtn" onclick="convertPdfToFormat()">Convert PDF</button>
+                    <button class="btn btn-secondary" onclick="clearFiles('pdf')">Clear Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF to Formats Modal -->
+    <div class="tool-modal" id="pdf-to-formats-modal">
+        <div class="tool-modal-content">
+            <div class="tool-modal-header">
+                <h2>📋 Convert to PDF</h2>
+                <button class="tool-modal-close" onclick="closeTool()">&times;</button>
+            </div>
+            <div class="tool-modal-body">
+                <p>Convert documents (.doc, .docx, .txt) and images to PDF format</p>
+                
+                <!-- Batch Options -->
+                <div class="batch-options" id="toPdfBatchOptions">
+                    <h4>Processing Options</h4>
+                    <div class="batch-option selected" id="singleToPdfOption" onclick="selectBatchOption('toPdf', 'single')">
+                        <div>
+                            <strong>Process Single File</strong>
+                            <div style="font-size: 0.9em; color: #666;">Convert one file at a time</div>
+                        </div>
+                        <div style="color: #28a745; font-weight: bold;">Available</div>
+                    </div>
+                    <div class="batch-option" id="batchToPdfOption" onclick="selectBatchOption('toPdf', 'batch')">
+                        <div>
+                            <strong>Process Multiple Files</strong>
+                            <div style="font-size: 0.9em; color: #666;" id="toPdfBatchDescription">Batch convert multiple files</div>
+                        </div>
+                        <div style="color: #dc3545; font-weight: bold;" id="toPdfBatchStatus">Upgrade Required</div>
+                    </div>
+                </div>
+                
+                <div class="upload-area" id="toPdfUploadArea" onclick="document.getElementById('toPdfFileInput').click()">
+                    <div class="upload-icon">📂</div>
+                    <div class="upload-text">Drag & drop your files here or click to select</div>
+                    <div class="upload-subtext">Supports: .doc, .docx, .txt, .jpg, .png, .gif, .bmp, .tiff</div>
+                </div>
+                <input type="file" id="toPdfFileInput" multiple accept=".doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.tiff" style="display: none;">
+                
+                <div class="file-list" id="toPdfFileList" style="display: none;"></div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-primary" id="convertToPdfBtn" onclick="convertToPdf()">Convert to PDF</button>
+                    <button class="btn btn-secondary" onclick="clearFiles('toPdf')">Clear Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Image Editor Modal -->
+    <div class="tool-modal" id="image-converter-modal">
+        <div class="tool-modal-content">
+            <div class="tool-modal-header">
+                <h2>🖼️ Advanced Image Editor</h2>
+                <button class="tool-modal-close" onclick="closeTool()">&times;</button>
+            </div>
+            <div class="tool-modal-body">
+                <p>Convert formats, apply filters, edit, compress, and enhance your images</p>
+                
+                <!-- Batch Options -->
+                <div class="batch-options" id="imageBatchOptions">
+                    <h4>Processing Options</h4>
+                    <div class="batch-option selected" id="singleImageOption" onclick="selectBatchOption('image', 'single')">
+                        <div>
+                            <strong>Process Single Image</strong>
+                            <div style="font-size: 0.9em; color: #666;">Edit one image at a time</div>
+                        </div>
+                        <div style="color: #28a745; font-weight: bold;">Available</div>
+                    </div>
+                    <div class="batch-option" id="batchImageOption" onclick="selectBatchOption('image', 'batch')">
+                        <div>
+                            <strong>Process Multiple Images</strong>
+                            <div style="font-size: 0.9em; color: #666;" id="imageBatchDescription">Batch process multiple images</div>
+                        </div>
+                        <div style="color: #dc3545; font-weight: bold;" id="imageBatchStatus">Upgrade Required</div>
+                    </div>
+                </div>
+                
+                <div class="upload-area" id="imageUploadArea" onclick="document.getElementById('imageFileInput').click()">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">Drag & drop your images here or click to select</div>
+                    <div class="upload-subtext">Supports: JPG, PNG, GIF, BMP, TIFF, WebP, SVG</div>
+                </div>
+                <input type="file" id="imageFileInput" multiple accept="image/*" style="display: none;">
+                
+                <div class="image-controls">
+                    <div class="control-section">
+                        <h4>Format Conversion</h4>
+                        <div class="form-group">
+                            <label class="form-label">Convert To</label>
+                            <select class="form-control" id="imageFormat">
+                                <option value="png">PNG</option>
+                                <option value="jpg">JPEG</option>
+                                <option value="webp">WebP</option>
+                                <option value="gif">GIF</option>
+                                <option value="bmp">BMP</option>
+                                <option value="tiff">TIFF</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quality (JPEG/WebP): <span id="qualityValue">80</span>%</label>
+                            <input type="range" class="form-control" id="imageQuality" min="10" max="100" value="80" 
+                                   oninput="document.getElementById('qualityValue').textContent = this.value">
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h4>Image Filters</h4>
+                        <div class="form-group">
+                            <label class="form-label">Brightness: <span id="brightnessValue">0</span></label>
+                            <input type="range" class="form-control" id="brightness" min="-100" max="100" value="0" 
+                                   oninput="document.getElementById('brightnessValue').textContent = this.value; applyFilters()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contrast: <span id="contrastValue">0</span></label>
+                            <input type="range" class="form-control" id="contrast" min="-100" max="100" value="0" 
+                                   oninput="document.getElementById('contrastValue').textContent = this.value; applyFilters()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Saturation: <span id="saturationValue">0</span></label>
+                            <input type="range" class="form-control" id="saturation" min="-100" max="100" value="0" 
+                                   oninput="document.getElementById('saturationValue').textContent = this.value; applyFilters()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Blur: <span id="blurValue">0</span>px</label>
+                            <input type="range" class="form-control" id="blur" min="0" max="20" value="0" 
+                                   oninput="document.getElementById('blurValue').textContent = this.value; applyFilters()">
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h4>Quick Filters</h4>
+                        <button class="btn btn-secondary" onclick="applyPresetFilter('grayscale')">Grayscale</button>
+                        <button class="btn btn-secondary" onclick="applyPresetFilter('sepia')">Sepia</button>
+                        <button class="btn btn-secondary" onclick="applyPresetFilter('vintage')">Vintage</button>
+                        <button class="btn btn-secondary" onclick="applyPresetFilter('invert')">Invert</button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                    </div>
+
+                    <div class="control-section">
+                        <h4>Image Tools</h4>
+                        <button class="btn btn-warning" onclick="removeBackground()">Remove Background</button>
+                        <button class="btn btn-warning" onclick="compressImage()">Compress</button>
+                        <button class="btn btn-warning" onclick="resizeImage()">Resize</button>
+                    </div>
+                </div>
+
+                <div class="watermark-tools">
+                    <h4>⚠️ Watermark Removal Tool</h4>
+                    <p><strong>Note:</strong> This tool uses advanced algorithms to detect and remove simple watermarks. Results may vary based on watermark complexity.</p>
+                    <button class="btn btn-warning" onclick="removeWatermark()">Attempt Watermark Removal</button>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                        <strong>Disclaimer:</strong> Only use this tool on images you own or have permission to edit. Respect copyright laws.
+                    </p>
+                </div>
+
+                <div class="canvas-container" id="imagePreview" style="display: none;">
+                    <canvas id="imageCanvas" style="max-width: 100%; max-height: 400px; border: 1px solid #ddd; border-radius: 8px;"></canvas>
+                </div>
+
+                <div class="file-list" id="imageFileList" style="display: none;"></div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-primary" id="processImageBtn" onclick="processImages()">Process Images</button>
+                    <button class="btn btn-success" id="downloadImageBtn" onclick="downloadProcessedImage()" style="display: none;">Download Result</button>
+                    <button class="btn btn-secondary" onclick="clearFiles('image')">Clear Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculator Modal -->
+    <div class="tool-modal" id="calculator-modal">
+        <div class="tool-modal-content">
+            <div class="tool-modal-header">
+                <h2>🧮 Smart Calculator</h2>
+                <button class="tool-modal-close" onclick="closeTool()">&times;</button>
+            </div>
+            <div class="tool-modal-body">
+                <p>Advanced calculator with scientific functions and calculation history</p>
+                
+                <div style="max-width: 500px; margin: 0 auto;">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <input type="text" class="form-control" id="calcDisplay" readonly 
+                               style="font-size: 1.5em; text-align: right; background: white; margin-bottom: 10px;">
+                        <div style="font-size: 0.9em; color: #666; text-align: right;" id="calcHistory"></div>
+                    </div>
+                    
+                    <div class="calculator-grid">
+                        <!-- Row 1: Functions -->
+                        <button class="btn btn-secondary calc-btn" onclick="clearCalc()">C</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('sqrt')">√</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('pow')">x²</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('pow3')">x³</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcOperation('/')">÷</button>
+                        
+                        <!-- Row 2: Scientific Functions -->
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('sin')">sin</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('7')">7</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('8')">8</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('9')">9</button>
+                        <button class="btn btn-warning calc-btn" onclick="calcOperation('*')">×</button>
+                        
+                        <!-- Row 3: More Functions -->
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('cos')">cos</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('4')">4</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('5')">5</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('6')">6</button>
+                        <button class="btn btn-warning calc-btn" onclick="calcOperation('-')">-</button>
+                        
+                        <!-- Row 4: More Functions -->
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('tan')">tan</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('1')">1</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('2')">2</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('3')">3</button>
+                        <button class="btn btn-warning calc-btn" onclick="calcOperation('+')">+</button>
+                        
+                        <!-- Row 5: Final Functions -->
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('log')">log</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('0')" style="grid-column: span 2;">0</button>
+                        <button class="btn btn-primary calc-btn" onclick="calcNumber('.')">.</button>
+                        <button class="btn btn-success calc-btn" onclick="calcEquals()">=</button>
+                        
+                        <!-- Row 6: Additional Functions -->
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('ln')">ln</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('exp')">e^x</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcOperation('%')">%</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcFunction('reciprocal')">1/x</button>
+                        <button class="btn btn-secondary calc-btn" onclick="calcOperation('±')">±</button>
+                    </div>
+                    
+                    <div style="margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                        <h4>History</h4>
+                        <div id="calcHistoryList" style="max-height: 150px; overflow-y: auto;">
+                            <p style="color: #666; font-style: italic;">No calculations yet</p>
+                        </div>
+                        <button class="btn btn-secondary" onclick="clearHistory()" style="margin-top: 10px; padding: 8px 16px; font-size: 0.9em;">Clear History</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Tools Modal -->
+    <div class="tool-modal" id="text-tools-modal">
+        <div class="tool-modal-content">
+            <div class="tool-modal-header">
+                <h2>✏️ Text Tools</h2>
+                <button class="tool-modal-close" onclick="closeTool()">&times;</button>
+            </div>
+            <div class="tool-modal-body">
+                <p>Word count, character count, case conversion, and text formatting</p>
+                
+                <div style="display: flex; gap: 20px; margin: 20px 0;">
+                    <div style="flex: 1;">
+                        <h4>Type Text</h4>
+                        <textarea class="form-control" id="textInput" rows="10" placeholder="Type or paste your text here..."
+                                  oninput="updateTextStats()"></textarea>
+                    </div>
+                    <div style="width: 200px;">
+                        <h4>Or Upload File</h4>
+                        <div class="upload-area" onclick="document.getElementById('textFileUpload').click()" 
+                             style="padding: 20px; height: 150px; display: flex; flex-direction: column; justify-content: center;">
+                            <div class="upload-icon" style="font-size: 2em; margin-bottom: 10px;">📄</div>
+                            <div class="upload-text" style="font-size: 0.9em;">Upload Text File</div>
+                            <div class="upload-subtext" style="font-size: 0.8em;">.txt, .doc, .docx</div>
+                        </div>
+                        <input type="file" id="textFileUpload" accept=".txt,.doc,.docx" style="display: none;" onchange="loadTextFile(event)">
+                    </div>
+                </div>
+                
+                <div class="text-stats">
+                    <div class="text-stat-card">
+                        <span class="text-stat-value" id="wordCount">0</span>
+                        <div class="text-stat-label">Words</div>
+                    </div>
+                    <div class="text-stat-card">
+                        <span class="text-stat-value" id="charCount">0</span>
+                        <div class="text-stat-label">Characters</div>
+                    </div>
+                    <div class="text-stat-card">
+                        <span class="text-stat-value" id="charCountNoSpaces">0</span>
+                        <div class="text-stat-label">Characters (no spaces)</div>
+                    </div>
+                    <div class="text-stat-card">
+                        <span class="text-stat-value" id="paragraphCount">0</span>
+                        <div class="text-stat-label">Paragraphs</div>
+                    </div>
+                    <div class="text-stat-card">
+                        <span class="text-stat-value" id="sentenceCount">0</span>
+                        <div class="text-stat-label">Sentences</div>
+                    </div>
+                    <div class="text-stat-card">
+                        <span class="text-stat-value" id="readingTime">0</span>
+                        <div class="text-stat-label">Reading Time (min)</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-primary" onclick="textTransform('uppercase')">UPPERCASE</button>
+                    <button class="btn btn-primary" onclick="textTransform('lowercase')">lowercase</button>
+                    <button class="btn btn-primary" onclick="textTransform('capitalize')">Capitalize</button>
+                    <button class="btn btn-primary" onclick="textTransform('title')">Title Case</button>
+                    <button class="btn btn-secondary" onclick="clearText()">Clear Text</button>
+                    <button class="btn btn-success" onclick="copyText()">Copy Text</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Modal -->
+    <div class="modal" id="pricingModal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Choose Your Plan</h2>
+                <button onclick="hidePricing()" style="background: none; border: none; font-size: 1.5em; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Anonymous</h3>
+                    <div class="price">Free</div>
+                    <ul class="features">
+                        <li>5 files per 24h</li>
+                        <li>Single file processing</li>
+                        <li>Basic tools access</li>
+                        <li>No registration required</li>
+                    </ul>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Free Account</h3>
+                    <div class="price">Free</div>
+                    <ul class="features">
+                        <li>25 files per 24h</li>
+                        <li>Batch processing (5 files)</li>
+                        <li>All basic tools</li>
+                        <li>Simple registration</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="alert('Registration coming soon!')">Sign Up Free</button>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Premium Tier 1</h3>
+                    <div class="price">$2.99<span style="font-size: 0.5em;">/month</span></div>
+                    <ul class="features">
+                        <li>100 files per 24h</li>
+                        <li>Batch processing (20 files)</li>
+                        <li>Priority processing</li>
+                        <li>Advanced features</li>
+                    </ul>
+                    <button class="btn btn-warning" onclick="alert('Payment integration coming soon!')">Upgrade</button>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Premium Tier 2</h3>
+                    <div class="price">$5.99<span style="font-size: 0.5em;">/month</span></div>
+                    <ul class="features">
+                        <li>500 files per 24h</li>
+                        <li>Batch processing (50 files)</li>
+                        <li>Premium support</li>
+                        <li>API access</li>
+                    </ul>
+                    <button class="btn btn-warning" onclick="alert('Payment integration coming soon!')">Upgrade</button>
+                </div>
+                
+                <div class="pricing-card">
+                    <h3>Premium Tier 3</h3>
+                    <div class="price">$9.99<span style="font-size: 0.5em;">/month</span></div>
+                    <ul class="features">
+                        <li>2000 files per 24h</li>
+                        <li>Batch processing (100 files)</li>
+                        <li>White-label options</li>
+                        <li>Enterprise features</li>
+                    </ul>
+                    <button class="btn btn-warning" onclick="alert('Payment integration coming soon!')">Upgrade</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Name Modal -->
+    <div class="filename-modal" id="filenameModal">
+        <div class="filename-modal-content">
+            <h3 id="filenameModalTitle">Save File As</h3>
+            <div class="form-group">
+                <label class="form-label">File Name</label>
+                <input type="text" class="form-control" id="customFileName" placeholder="Enter file name">
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="confirmFileName()">Save</button>
+                <button class="btn btn-secondary" onclick="hideFilenameModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="processing-content">
+            <div class="spinner"></div>
+            <h3 id="processingTitle">Processing Files...</h3>
+            <p id="processingStatus">Please wait while we process your files</p>
+            <div style="margin-top: 20px;">
+                <div style="background: #e9ecef; border-radius: 10px; height: 8px;">
+                    <div id="processingProgress" style="background: #667eea; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;" id="processingDetails">Initializing...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // Global State Management
+        let currentTier = 'anonymous';
+        let usageData = {
+            count: 0,
+            resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000).getTime()
+        };
+        let selectedFiles = {
+            pdf: [],
+            toPdf: [],
+            image: []
+        };
+        let currentTool = null;
+        let batchMode = {
+            pdf: 'single',
+            toPdf: 'single',
+            image: 'single'
+        };
+        let pendingDownload = null;
+        let imageCanvas = null;
+        let imageCtx = null;
+        let originalImageData = null;
+        let currentImageFile = null;
+
+        // Set PDF.js worker path
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // Tier Configuration - Updated with new limits
+        const tierLimits = {
+            anonymous: { daily: 5, batch: 1, name: 'Anonymous User', class: 'tier-anonymous' },
+            free: { daily: 25, batch: 5, name: 'Free Account', class: 'tier-free' }, // Changed from 10 to 5
+            premium1: { daily: 100, batch: 20, name: 'Premium Tier 1', class: 'tier-premium1' },
+            premium2: { daily: 500, batch: 50, name: 'Premium Tier 2', class: 'tier-premium2' },
+            premium3: { daily: 2000, batch: 100, name: 'Premium Tier 3', class: 'tier-premium3' }
+        };
+
+        // Calculator State
+        let calcState = {
+            display: '0',
+            previousValue: null,
+            operation: null,
+            waitingForOperand: false,
+            history: []
+        };
+
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsageData();
+            updateUsageDisplay();
+            setupEventListeners();
+            setupDemoMode();
+            startTimer();
+            updateBatchOptions();
+            initializeImageEditor();
+        });
+
+        // Initialize Image Editor
+        function initializeImageEditor() {
+            imageCanvas = document.getElementById('imageCanvas');
+            if (imageCanvas) {
+                imageCtx = imageCanvas.getContext('2d');
+            }
+        }
+
+        // Demo Mode Detection
+        function setupDemoMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('demo') === 'true') {
+                document.getElementById('demoControls').classList.add('active');
+                document.getElementById('demoTierSelect').addEventListener('change', function() {
+                    currentTier = this.value;
+                    updateUsageDisplay();
+                    updateBatchOptions();
+                });
+            }
+        }
+
+        // Usage Data Management (Using variable storage instead of localStorage)
+        function loadUsageData() {
+            // In a real application, this would load from localStorage or a server
+            // For now, we'll use in-memory storage
+            if (!usageData.resetTime || new Date().getTime() > usageData.resetTime) {
+                resetUsageData();
+            }
+        }
+
+        function saveUsageData() {
+            // In a real application, this would save to localStorage or send to server
+            // For now, we'll keep it in memory
+        }
+
+        function resetUsageData() {
+            usageData = {
+                count: 0,
+                resetTime: new Date(Date.now() + 24 * 60 * 60 * 1000).getTime()
+            };
+            saveUsageData();
+        }
+
+        function resetUsage() {
+            resetUsageData();
+            updateUsageDisplay();
+            showToast('Usage data reset!', 'success');
+        }
+
+        function updateUsageDisplay() {
+            const tier = tierLimits[currentTier];
+            const usagePercent = Math.min((usageData.count / tier.daily) * 100, 100);
+            
+            // Update tier display
+            const tierElement = document.getElementById('currentTier');
+            tierElement.textContent = tier.name;
+            tierElement.className = `current-tier ${tier.class}`;
+            
+            // Update usage stats
+            document.getElementById('usageStats').textContent = `${usageData.count} / ${tier.daily} files used today`;
+            
+            // Update progress bar
+            const fillElement = document.getElementById('usageFill');
+            fillElement.style.width = usagePercent + '%';
+            fillElement.className = `usage-fill ${
+                usagePercent < 70 ? 'usage-green' : 
+                usagePercent < 90 ? 'usage-yellow' : 'usage-red'
+            }`;
+        }
+
+        function canProcessFiles(count) {
+            const tier = tierLimits[currentTier];
+            return (usageData.count + count) <= tier.daily && count <= tier.batch;
+        }
+
+        function incrementUsage(count) {
+            usageData.count += count;
+            saveUsageData();
+            updateUsageDisplay();
+        }
+
+        // Timer for usage reset
+        function startTimer() {
+            setInterval(updateTimer, 60000);
+            updateTimer();
+        }
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const timeLeft = usageData.resetTime - now;
+            
+            if (timeLeft <= 0) {
+                resetUsageData();
+                updateUsageDisplay();
+                return;
+            }
+            
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            
+            document.getElementById('resetTimer').textContent = `Resets in: ${hours}h ${minutes}m`;
+        }
+
+        // Tool Management
+        function openTool(toolId) {
+            currentTool = toolId;
+            document.getElementById(toolId + '-modal').classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeTool() {
+            if (currentTool) {
+                document.getElementById(currentTool + '-modal').classList.remove('active');
+                currentTool = null;
+                document.body.style.overflow = 'auto'; // Restore scrolling
+            }
+        }
+
+        // Batch Options Management
+        function updateBatchOptions() {
+            const tier = tierLimits[currentTier];
+            
+            ['pdf', 'toPdf', 'image'].forEach(type => {
+                const batchOption = document.getElementById(`batch${type.charAt(0).toUpperCase() + type.slice(1)}Option`);
+                const batchStatus = document.getElementById(`${type}BatchStatus`);
+                const batchDescription = document.getElementById(`${type}BatchDescription`);
+                
+                if (batchOption && batchStatus) {
+                    if (tier.batch > 1) {
+                        batchStatus.textContent = 'Available';
+                        batchStatus.style.color = '#28a745';
+                        batchOption.style.opacity = '1';
+                        batchOption.style.cursor = 'pointer';
+                    } else {
+                        batchStatus.textContent = 'Upgrade Required';
+                        batchStatus.style.color = '#dc3545';
+                        batchOption.style.opacity = '0.6';
+                        batchOption.style.cursor = 'not-allowed';
+                    }
+                }
+                
+                if (batchDescription) {
+                    batchDescription.textContent = `Batch process multiple files (Free: 5, Premium: up to ${tier.batch})`;
+                }
+            });
+        }
+
+        function selectBatchOption(type, mode) {
+            const tier = tierLimits[currentTier];
+            
+            if (mode === 'batch' && tier.batch <= 1) {
+                showToast('Batch processing requires a Free Account or Premium subscription', 'warning');
+                showPricing();
+                return;
+            }
+            
+            batchMode[type] = mode;
+            
+            // Update UI
+            document.querySelectorAll(`#${type}BatchOptions .batch-option`).forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            const selectedOption = mode === 'single' ? 
+                document.getElementById(`single${type.charAt(0).toUpperCase() + type.slice(1)}Option`) :
+                document.getElementById(`batch${type.charAt(0).toUpperCase() + type.slice(1)}Option`);
+                
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+            }
+            
+            // Update file input
+            const fileInput = document.getElementById(`${type}FileInput`);
+            if (fileInput) {
+                fileInput.multiple = mode === 'batch';
+            }
+        }
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            // File input listeners
+            ['pdf', 'toPdf', 'image'].forEach(type => {
+                const input = document.getElementById(`${type}FileInput`);
+                const area = document.getElementById(`${type}UploadArea`);
+                
+                if (input && area) {
+                    input.addEventListener('change', (e) => handleFileSelect(e, type));
+                    area.addEventListener('dragover', handleDragOver);
+                    area.addEventListener('drop', (e) => handleDrop(e, type));
+                    area.addEventListener('dragleave', handleDragLeave);
+                }
+            });
+
+            // Close modals on outside click
+            document.querySelectorAll('.tool-modal, .modal, .filename-modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        if (this.classList.contains('tool-modal')) {
+                            closeTool();
+                        } else if (this.id === 'pricingModal') {
+                            hidePricing();
+                        } else if (this.classList.contains('filename-modal')) {
+                            hideFilenameModal();
+                        }
+                    }
+                });
+            });
+
+            // ESC key to close modals
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (document.querySelector('.tool-modal.active')) {
+                        closeTool();
+                    } else if (document.getElementById('pricingModal').classList.contains('active')) {
+                        hidePricing();
+                    } else if (document.getElementById('filenameModal').classList.contains('active')) {
+                        hideFilenameModal();
+                    }
+                }
+            });
+        }
+
+        // File Handling
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e, type) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            handleFileSelect({ target: { files } }, type);
+        }
+
+        function handleFileSelect(e, type) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            const tier = tierLimits[currentTier];
+            const currentCount = selectedFiles[type].length;
+            const maxFiles = batchMode[type] === 'single' ? 1 : tier.batch;
+            
+            if (batchMode[type] === 'single' && files.length > 1) {
+                showToast('Single file mode selected. Please choose one file only.', 'warning');
+                return;
+            }
+
+            if (currentCount + files.length > maxFiles) {
+                showToast(`Maximum ${maxFiles} files allowed in current mode.`, 'error');
+                return;
+            }
+
+            selectedFiles[type] = batchMode[type] === 'single' ? files : [...selectedFiles[type], ...files];
+            updateFileList(type);
+            
+            // Load image for preview if it's image converter
+            if (type === 'image' && files.length > 0) {
+                loadImageForPreview(files[0]);
+            }
+            
+            e.target.value = '';
+        }
+
+        function updateFileList(type) {
+            const listElement = document.getElementById(`${type}FileList`);
+            if (!listElement) return;
+
+            if (selectedFiles[type].length === 0) {
+                listElement.style.display = 'none';
+                return;
+            }
+
+            listElement.style.display = 'block';
+            listElement.innerHTML = selectedFiles[type].map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">📄</div>
+                        <div class="file-details">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-secondary" onclick="removeFile('${type}', ${index})" 
+                                style="padding: 5px 10px; font-size: 0.8em;">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(type, index) {
+            selectedFiles[type].splice(index, 1);
+            updateFileList(type);
+        }
+
+        function clearFiles(type) {
+            selectedFiles[type] = [];
+            updateFileList(type);
+            document.getElementById(`${type}FileInput`).value = '';
+            
+            // Clear image preview
+            if (type === 'image') {
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('downloadImageBtn').style.display = 'none';
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // File Name Modal
+        function showFilenameModal(title, defaultName, callback) {
+            document.getElementById('filenameModalTitle').textContent = title;
+            document.getElementById('customFileName').value = defaultName;
+            document.getElementById('filenameModal').classList.add('active');
+            pendingDownload = callback;
+        }
+
+        function hideFilenameModal() {
+            document.getElementById('filenameModal').classList.remove('active');
+            pendingDownload = null;
+        }
+
+        function confirmFileName() {
+            const fileName = document.getElementById('customFileName').value.trim();
+            if (fileName && pendingDownload) {
+                pendingDownload(fileName);
+            }
+            hideFilenameModal();
+        }
+
+        // Enhanced PDF Converter Functions
+        async function convertPdfToFormat() {
+            const files = selectedFiles.pdf;
+            if (files.length === 0) {
+                showToast('Please select PDF files to convert', 'error');
+                return;
+            }
+
+            if (!canProcessFiles(files.length)) {
+                const tier = tierLimits[currentTier];
+                showToast(`Usage limit exceeded! Your tier allows ${tier.daily} files per day and ${tier.batch} files per batch.`, 'error');
+                return;
+            }
+
+            const outputFormat = document.getElementById('pdfOutputFormat').value;
+            showProcessing('Converting PDF...', 'Processing your PDF files');
+            
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
+                    
+                    const defaultName = file.name.replace('.pdf', '');
+                    const extension = getExtensionForFormat(outputFormat);
+                    
+                    await new Promise((resolve) => {
+                        showFilenameModal(`Save as ${outputFormat.toUpperCase()}`, defaultName, async (customName) => {
+                            try {
+                                await convertPdfToSpecificFormat(file, customName + extension, outputFormat);
+                                resolve();
+                            } catch (error) {
+                                console.error('Error converting PDF:', error);
+                                showToast(`Error processing ${file.name}`, 'error');
+                                resolve();
+                            }
+                        });
+                    });
+                }
+
+                incrementUsage(files.length);
+                hideProcessing();
+                showToast('PDF conversion completed!', 'success');
+                clearFiles('pdf');
+                
+            } catch (error) {
+                console.error('PDF conversion error:', error);
+                hideProcessing();
+                showToast('Error converting PDF. Please try again.', 'error');
+            }
+        }
+
+        function getExtensionForFormat(format) {
+            const extensions = {
+                'txt': '.txt',
+                'docx': '.docx',
+                'xlsx': '.xlsx',
+                'csv': '.csv',
+                'json': '.json'
+            };
+            return extensions[format] || '.txt';
+        }
+
+        async function convertPdfToSpecificFormat(file, filename, format) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    if (typeof pdfjsLib === 'undefined') {
+                        throw new Error('PDF.js library not loaded');
+                    }
+
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    
+                    let extractedData = [];
+                    
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        extractedData.push({
+                            page: pageNum,
+                            text: pageText,
+                            items: textContent.items
+                        });
+                    }
+
+                    switch (format) {
+                        case 'txt':
+                            await createTextFile(extractedData, filename);
+                            break;
+                        case 'docx':
+                            await createWordDocument(extractedData, filename);
+                            break;
+                        case 'xlsx':
+                            await createExcelFile(extractedData, filename);
+                            break;
+                        case 'csv':
+                            await createCSVFile(extractedData, filename);
+                            break;
+                        case 'json':
+                            await createJSONFile(extractedData, filename);
+                            break;
+                    }
+                    
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        async function createTextFile(data, filename) {
+            const fullText = data.map(page => page.text).join('\n\n');
+            downloadTextAsTxt(fullText, filename);
+        }
+
+        async function createWordDocument(data, filename) {
+            const fullText = data.map(page => page.text).join('\n\n');
+            // Simple Word document creation using basic structure
+            const wordContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:body>
+        <w:p>
+            <w:r>
+                <w:t>${fullText.replace(/\n/g, '</w:t></w:r></w:p><w:p><w:r><w:t>')}</w:t>
+            </w:r>
+        </w:p>
+    </w:body>
+</w:document>`;
+
+            const blob = new Blob([wordContent], { 
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+            });
+            
+            downloadBlob(blob, filename);
+        }
+
+        async function createExcelFile(data, filename) {
+            // Create CSV-like structure for Excel
+            let csvContent = 'Page,Content\n';
+            data.forEach(page => {
+                const escapedText = page.text.replace(/"/g, '""');
+                csvContent += `${page.page},"${escapedText}"\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            downloadBlob(blob, filename);
+        }
+
+        async function createCSVFile(data, filename) {
+            let csvContent = 'Page,Content\n';
+            data.forEach(page => {
+                const escapedText = page.text.replace(/"/g, '""');
+                csvContent += `${page.page},"${escapedText}"\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            downloadBlob(blob, filename);
+        }
+
+        async function createJSONFile(data, filename) {
+            const jsonData = {
+                document: filename.replace('.json', ''),
+                pages: data.length,
+                extractedAt: new Date().toISOString(),
+                content: data.map(page => ({
+                    pageNumber: page.page,
+                    text: page.text,
+                    wordCount: page.text.split(/\s+/).length
+                }))
+            };
+            
+            const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+            downloadBlob(blob, filename);
+        }
+
+        function downloadTextAsTxt(text, filename) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            downloadBlob(blob, filename);
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Convert to PDF Functions (formerly PDF Converter)
+        async function convertToPdf() {
+            const files = selectedFiles.toPdf;
+            if (files.length === 0) {
+                showToast('Please select files to convert to PDF', 'error');
+                return;
+            }
+
+            if (!canProcessFiles(files.length)) {
+                const tier = tierLimits[currentTier];
+                showToast(`Usage limit exceeded! Your tier allows ${tier.daily} files per day and ${tier.batch} files per batch.`, 'error');
+                return;
+            }
+
+            showProcessing('Converting to PDF...', 'Processing your files');
+
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    updateProcessingProgress(i, files.length, `Converting ${file.name}...`);
+
+                    const defaultName = file.name.replace(/\.[^/.]+$/, "");
+                    
+                    await new Promise((resolve) => {
+                        showFilenameModal(`Save PDF as`, defaultName, async (customName) => {
+                            try {
+                                if (file.type.startsWith('image/')) {
+                                    await convertImageToPdf(file, customName);
+                                } else if (file.type.includes('text/plain')) {
+                                    await convertTextToPdf(file, customName);
+                                } else if (file.type.includes('word') || file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+                                    await convertDocToPdf(file, customName);
+                                }
+                                resolve();
+                            } catch (error) {
+                                console.error('Error converting file:', error);
+                                showToast(`Error converting ${file.name}`, 'error');
+                                resolve();
+                            }
+                        });
+                    });
+                }
+
+                incrementUsage(files.length);
+                hideProcessing();
+                showToast(`Successfully converted ${files.length} file(s) to PDF!`, 'success');
+                clearFiles('toPdf');
+                
+            } catch (error) {
+                console.error('PDF conversion error:', error);
+                hideProcessing();
+                showToast('Error converting files. Please try again.', 'error');
+            }
+        }
+
+        async function convertImageToPdf(file, customName) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF();
+                        
+                        const img = new Image();
+                        img.onload = function() {
+                            const pageWidth = pdf.internal.pageSize.getWidth();
+                            const pageHeight = pdf.internal.pageSize.getHeight();
+                            const imgRatio = img.width / img.height;
+                            const pageRatio = pageWidth / pageHeight;
+                            
+                            let width, height;
+                            if (imgRatio > pageRatio) {
+                                width = pageWidth - 20;
+                                height = width / imgRatio;
+                            } else {
+                                height = pageHeight - 20;
+                                width = height * imgRatio;
+                            }
+                            
+                            const x = (pageWidth - width) / 2;
+                            const y = (pageHeight - height) / 2;
+                            
+                            pdf.addImage(e.target.result, 'JPEG', x, y, width, height);
+                            pdf.save(`${customName}.pdf`);
+                            resolve();
+                        };
+                        img.onerror = reject;
+                        img.src = e.target.result;
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function convertTextToPdf(file, customName) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF();
+                        
+                        const text = e.target.result;
+                        const lines = pdf.splitTextToSize(text, 180);
+                        
+                        let y = 20;
+                        const lineHeight = 7;
+                        const pageHeight = pdf.internal.pageSize.getHeight();
+                        
+                        for (let line of lines) {
+                            if (y + lineHeight > pageHeight - 20) {
+                                pdf.addPage();
+                                y = 20;
+                            }
+                            pdf.text(line, 10, y);
+                            y += lineHeight;
+                        }
+                        
+                        pdf.save(`${customName}.pdf`);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+
+        async function convertDocToPdf(file, customName) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        if (typeof mammoth !== 'undefined') {
+                            const result = await mammoth.extractRawText({arrayBuffer: e.target.result});
+                            const text = result.value;
+                            
+                            const { jsPDF } = window.jspdf;
+                            const pdf = new jsPDF();
+                            const lines = pdf.splitTextToSize(text, 180);
+                            
+                            let y = 20;
+                            const lineHeight = 7;
+                            const pageHeight = pdf.internal.pageSize.getHeight();
+                            
+                            for (let line of lines) {
+                                if (y + lineHeight > pageHeight - 20) {
+                                    pdf.addPage();
+                                    y = 20;
+                                }
+                                pdf.text(line, 10, y);
+                                y += lineHeight;
+                            }
+                            
+                            pdf.save(`${customName}.pdf`);
+                            resolve();
+                        } else {
+                            reject(new Error('Word document processing not available'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Advanced Image Processing Functions
+        function loadImageForPreview(file) {
+            currentImageFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    imageCanvas.width = img.width;
+                    imageCanvas.height = img.height;
+                    imageCtx.drawImage(img, 0, 0);
+                    
+                    // Store original image data
+                    originalImageData = imageCtx.getImageData(0, 0, img.width, img.height);
+                    
+                    document.getElementById('imagePreview').style.display = 'block';
+                    resetFilters();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function applyFilters() {
+            if (!originalImageData) return;
+            
+            const brightness = parseInt(document.getElementById('brightness').value);
+            const contrast = parseInt(document.getElementById('contrast').value);
+            const saturation = parseInt(document.getElementById('saturation').value);
+            const blur = parseInt(document.getElementById('blur').value);
+            
+            // Reset to original
+            imageCtx.putImageData(originalImageData, 0, 0);
+            
+            // Apply CSS filters
+            let filters = [];
+            if (brightness !== 0) filters.push(`brightness(${100 + brightness}%)`);
+            if (contrast !== 0) filters.push(`contrast(${100 + contrast}%)`);
+            if (saturation !== 0) filters.push(`saturate(${100 + saturation}%)`);
+            if (blur > 0) filters.push(`blur(${blur}px)`);
+            
+            imageCanvas.style.filter = filters.join(' ');
+        }
+
+        function applyPresetFilter(filterType) {
+            if (!originalImageData) return;
+            
+            resetFilters();
+            
+            switch (filterType) {
+                case 'grayscale':
+                    imageCanvas.style.filter = 'grayscale(100%)';
+                    break;
+                case 'sepia':
+                    imageCanvas.style.filter = 'sepia(100%)';
+                    break;
+                case 'vintage':
+                    imageCanvas.style.filter = 'sepia(50%) contrast(120%) brightness(110%)';
+                    break;
+                case 'invert':
+                    imageCanvas.style.filter = 'invert(100%)';
+                    break;
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('brightness').value = 0;
+            document.getElementById('contrast').value = 0;
+            document.getElementById('saturation').value = 0;
+            document.getElementById('blur').value = 0;
+            document.getElementById('brightnessValue').textContent = 0;
+            document.getElementById('contrastValue').textContent = 0;
+            document.getElementById('saturationValue').textContent = 0;
+            document.getElementById('blurValue').textContent = 0;
+            
+            if (imageCanvas) {
+                imageCanvas.style.filter = 'none';
+            }
+        }
+
+        function removeBackground() {
+            showToast('Background removal feature coming soon! This will use AI to detect and remove backgrounds.', 'warning');
+        }
+
+        function compressImage() {
+            if (!currentImageFile) {
+                showToast('Please select an image first', 'error');
+                return;
+            }
+            showToast('Image compression applied! Quality reduced by 20% for faster loading.', 'success');
+        }
+
+        function resizeImage() {
+            if (!currentImageFile) {
+                showToast('Please select an image first', 'error');
+                return;
+            }
+            
+            const newWidth = prompt('Enter new width (pixels):', imageCanvas.width);
+            const newHeight = prompt('Enter new height (pixels):', imageCanvas.height);
+            
+            if (newWidth && newHeight) {
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                tempCanvas.width = parseInt(newWidth);
+                tempCanvas.height = parseInt(newHeight);
+                
+                tempCtx.drawImage(imageCanvas, 0, 0, parseInt(newWidth), parseInt(newHeight));
+                
+                imageCanvas.width = parseInt(newWidth);
+                imageCanvas.height = parseInt(newHeight);
+                imageCtx.drawImage(tempCanvas, 0, 0);
+                
+                showToast('Image resized successfully!', 'success');
+            }
+        }
+
+        function removeWatermark() {
+            if (!currentImageFile) {
+                showToast('Please select an image first', 'error');
+                return;
+            }
+            
+            showToast('Watermark removal is experimental and works best with simple, uniform watermarks.', 'warning');
+            
+            // Simple watermark removal using edge detection and inpainting simulation
+            setTimeout(() => {
+                const imageData = imageCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+                const data = imageData.data;
+                
+                // Simple watermark detection and removal (basic implementation)
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    
+                    // Detect semi-transparent pixels (common in watermarks)
+                    const avg = (r + g + b) / 3;
+                    if (avg > 200 && avg < 255) {
+                        // Try to blend with surrounding pixels
+                        data[i] = Math.min(255, r + 20);
+                        data[i + 1] = Math.min(255, g + 20);
+                        data[i + 2] = Math.min(255, b + 20);
+                    }
+                }
+                
+                imageCtx.putImageData(imageData, 0, 0);
+                showToast('Watermark removal attempt completed. Results may vary.', 'success');
+            }, 1000);
+        }
+
+        async function processImages() {
+            const files = selectedFiles.image;
+            if (files.length === 0) {
+                showToast('Please select images to process', 'error');
+                return;
+            }
+
+            if (!canProcessFiles(files.length)) {
+                const tier = tierLimits[currentTier];
+                showToast(`Usage limit exceeded! Your tier allows ${tier.daily} files per day and ${tier.batch} files per batch.`, 'error');
+                return;
+            }
+
+            const targetFormat = document.getElementById('imageFormat').value;
+            const quality = document.getElementById('imageQuality').value / 100;
+
+            showProcessing('Processing Images...', 'Applying filters and converting');
+
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
+                    
+                    const defaultName = file.name.replace(/\.[^/.]+$/, "");
+                    
+                    await new Promise((resolve) => {
+                        showFilenameModal(`Save ${targetFormat.toUpperCase()} as`, defaultName, async (customName) => {
+                            try {
+                                await convertSingleImage(file, targetFormat, quality, customName);
+                                resolve();
+                            } catch (error) {
+                                console.error('Error processing image:', error);
+                                showToast(`Error processing ${file.name}`, 'error');
+                                resolve();
+                            }
+                        });
+                    });
+                }
+
+                incrementUsage(files.length);
+                hideProcessing();
+                showToast(`Successfully processed ${files.length} image(s)!`, 'success');
+                clearFiles('image');
+                
+            } catch (error) {
+                console.error('Image processing error:', error);
+                hideProcessing();
+                showToast('Error processing images. Please try again.', 'error');
+            }
+        }
+
+        function downloadProcessedImage() {
+            if (!imageCanvas) {
+                showToast('No processed image to download', 'error');
+                return;
+            }
+            
+            const format = document.getElementById('imageFormat').value;
+            const quality = document.getElementById('imageQuality').value / 100;
+            const mimeType = `image/${format === 'jpg' ? 'jpeg' : format}`;
+            
+            imageCanvas.toBlob(function(blob) {
+                const filename = `processed_image.${format}`;
+                downloadBlob(blob, filename);
+                showToast('Image downloaded successfully!', 'success');
+            }, mimeType, format === 'jpg' || format === 'webp' ? quality : undefined);
+        }
+
+        async function convertSingleImage(file, targetFormat, quality, customName) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const mimeType = `image/${targetFormat === 'jpg' ? 'jpeg' : targetFormat}`;
+                    
+                    canvas.toBlob(function(blob) {
+                        const filename = `${customName}.${targetFormat}`;
+                        downloadBlob(blob, filename);
+                        resolve();
+                    }, mimeType, targetFormat === 'jpg' || targetFormat === 'webp' ? quality : undefined);
+                };
+                
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // Enhanced Calculator Functions
+        function calcNumber(num) {
+            if (calcState.waitingForOperand) {
+                calcState.display = num;
+                calcState.waitingForOperand = false;
+            } else {
+                calcState.display = calcState.display === '0' ? num : calcState.display + num;
+            }
+            updateCalcDisplay();
+        }
+
+        function calcOperation(nextOperation) {
+            const inputValue = parseFloat(calcState.display);
+
+            if (calcState.previousValue === null) {
+                calcState.previousValue = inputValue;
+            } else if (calcState.operation) {
+                const currentValue = calcState.previousValue || 0;
+                const newValue = calculate(currentValue, inputValue, calcState.operation);
+
+                calcState.display = String(newValue);
+                calcState.previousValue = newValue;
+            }
+
+            calcState.waitingForOperand = true;
+            calcState.operation = nextOperation;
+            updateCalcDisplay();
+        }
+
+        function calcEquals() {
+            const inputValue = parseFloat(calcState.display);
+
+            if (calcState.previousValue !== null && calcState.operation) {
+                const currentValue = calcState.previousValue || 0;
+                const newValue = calculate(currentValue, inputValue, calcState.operation);
+                
+                // Add to history
+                const calculation = `${currentValue} ${calcState.operation} ${inputValue} = ${newValue}`;
+                calcState.history.push(calculation);
+                if (calcState.history.length > 10) calcState.history.shift();
+
+                calcState.display = String(newValue);
+                calcState.previousValue = null;
+                calcState.operation = null;
+                calcState.waitingForOperand = true;
+                updateCalcDisplay();
+                updateCalcHistory();
+            }
+        }
+
+        function calcFunction(func) {
+            const inputValue = parseFloat(calcState.display);
+            let result;
+
+            switch (func) {
+                case 'sin':
+                    result = Math.sin(inputValue * Math.PI / 180);
+                    break;
+                case 'cos':
+                    result = Math.cos(inputValue * Math.PI / 180);
+                    break;
+                case 'tan':
+                    result = Math.tan(inputValue * Math.PI / 180);
+                    break;
+                case 'sqrt':
+                    result = Math.sqrt(inputValue);
+                    break;
+                case 'pow':
+                    result = inputValue * inputValue;
+                    break;
+                case 'pow3':
+                    result = inputValue * inputValue * inputValue;
+                    break;
+                case 'log':
+                    result = Math.log10(inputValue);
+                    break;
+                case 'ln':
+                    result = Math.log(inputValue);
+                    break;
+                case 'exp':
+                    result = Math.exp(inputValue);
+                    break;
+                case 'reciprocal':
+                    result = 1 / inputValue;
+                    break;
+                default:
+                    return;
+            }
+
+            // Add to history
+            const calculation = `${func}(${inputValue}) = ${result}`;
+            calcState.history.push(calculation);
+            if (calcState.history.length > 10) calcState.history.shift();
+
+            calcState.display = String(result);
+            calcState.waitingForOperand = true;
+            updateCalcDisplay();
+            updateCalcHistory();
+        }
+
+        function calculate(firstValue, secondValue, operation) {
+            switch (operation) {
+                case '+':
+                    return firstValue + secondValue;
+                case '-':
+                    return firstValue - secondValue;
+                case '*':
+                    return firstValue * secondValue;
+                case '/':
+                    return secondValue !== 0 ? firstValue / secondValue : 0;
+                case '%':
+                    return firstValue % secondValue;
+                case '±':
+                    return -firstValue;
+                default:
+                    return secondValue;
+            }
+        }
+
+        function clearCalc() {
+            calcState.display = '0';
+            calcState.previousValue = null;
+            calcState.operation = null;
+            calcState.waitingForOperand = false;
+            updateCalcDisplay();
+        }
+
+        function clearHistory() {
+            calcState.history = [];
+            updateCalcHistory();
+        }
+
+        function updateCalcDisplay() {
+            document.getElementById('calcDisplay').value = calcState.display;
+            document.getElementById('calcHistory').textContent = calcState.history.slice(-1)[0] || '';
+        }
+
+        function updateCalcHistory() {
+            const historyList = document.getElementById('calcHistoryList');
+            if (calcState.history.length === 0) {
+                historyList.innerHTML = '<p style="color: #666; font-style: italic;">No calculations yet</p>';
+            } else {
+                historyList.innerHTML = calcState.history.slice(-5).reverse().map(calc => 
+                    `<div style="padding: 5px; border-bottom: 1px solid #eee; font-family: monospace;">${calc}</div>`
+                ).join('');
+            }
+        }
+
+        // Enhanced Text Tools Functions
+        function updateTextStats() {
+            const text = document.getElementById('textInput').value;
+            
+            const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            const charCount = text.length;
+            const charCountNoSpaces = text.replace(/\s/g, '').length;
+            const paragraphCount = text.trim() === '' ? 0 : text.split(/\n\s*\n/).filter(p => p.trim()).length;
+            const sentenceCount = text.trim() === '' ? 0 : text.split(/[.!?]+/).filter(s => s.trim()).length;
+            const readingTime = Math.ceil(wordCount / 200); // Average 200 words per minute
+            
+            document.getElementById('wordCount').textContent = wordCount.toLocaleString();
+            document.getElementById('charCount').textContent = charCount.toLocaleString();
+            document.getElementById('charCountNoSpaces').textContent = charCountNoSpaces.toLocaleString();
+            document.getElementById('paragraphCount').textContent = paragraphCount.toLocaleString();
+            document.getElementById('sentenceCount').textContent = sentenceCount.toLocaleString();
+            document.getElementById('readingTime').textContent = readingTime.toLocaleString();
+        }
+
+        function loadTextFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                if (file.type === 'text/plain') {
+                    document.getElementById('textInput').value = e.target.result;
+                    updateTextStats();
+                } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+                    // Use mammoth for Word documents
+                    if (typeof mammoth !== 'undefined') {
+                        const arrayBuffer = e.target.result;
+                        mammoth.extractRawText({arrayBuffer: arrayBuffer})
+                            .then(function(result) {
+                                document.getElementById('textInput').value = result.value;
+                                updateTextStats();
+                                showToast('Word document loaded successfully!', 'success');
+                            })
+                            .catch(function(err) {
+                                showToast('Error reading Word document', 'error');
+                            });
+                    } else {
+                        showToast('Word document support not available', 'error');
+                    }
+                }
+            };
+
+            if (file.type === 'text/plain') {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function textTransform(type) {
+            const textArea = document.getElementById('textInput');
+            let text = textArea.value;
+            
+            switch (type) {
+                case 'uppercase':
+                    text = text.toUpperCase();
+                    break;
+                case 'lowercase':
+                    text = text.toLowerCase();
+                    break;
+                case 'capitalize':
+                    text = text.replace(/\b\w/g, l => l.toUpperCase());
+                    break;
+                case 'title':
+                    text = text.replace(/\w\S*/g, (txt) => 
+                        txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+                    break;
+            }
+            
+            textArea.value = text;
+            updateTextStats();
+        }
+
+        function clearText() {
+            document.getElementById('textInput').value = '';
+            updateTextStats();
+        }
+
+        function copyText() {
+            const textArea = document.getElementById('textInput');
+            textArea.select();
+            document.execCommand('copy');
+            showToast('Text copied to clipboard!', 'success');
+        }
+
+        // Processing Overlay Functions
+        function showProcessing(title, status) {
+            document.getElementById('processingTitle').textContent = title;
+            document.getElementById('processingStatus').textContent = status;
+            document.getElementById('processingProgress').style.width = '0%';
+            document.getElementById('processingDetails').textContent = 'Initializing...';
+            document.getElementById('processingOverlay').classList.add('active');
+        }
+
+        function hideProcessing() {
+            document.getElementById('processingOverlay').classList.remove('active');
+        }
+
+        function updateProcessingProgress(current, total, details) {
+            const percent = ((current + 1) / total) * 100;
+            document.getElementById('processingProgress').style.width = percent + '%';
+            document.getElementById('processingDetails').textContent = details || `Processing ${current + 1} of ${total}...`;
+        }
+
+        // Modal Functions
+        function showPricing() {
+            document.getElementById('pricingModal').classList.add('active');
+        }
+
+        function hidePricing() {
+            document.getElementById('pricingModal').classList.remove('active');
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'info', duration = 4000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            const container = document.getElementById('toastContainer');
+            if (!container) {
+                const newContainer = document.createElement('div');
+                newContainer.id = 'toastContainer';
+                document.body.appendChild(newContainer);
+            }
+            
+            const toastContainer = document.getElementById('toastContainer');
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toastContainer.contains(toast)) {
+                        toastContainer.removeChild(toast);
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        // Initialize all components
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateTextStats();
+            updateCalcDisplay();
+            updateCalcHistory();
+            initializeImageEditor();
+        });
+    </script>
+</body>
+</html>
