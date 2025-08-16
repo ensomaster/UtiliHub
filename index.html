@@ -231,6 +231,14 @@
             padding: 30px;
         }
 
+          /* PDF Converter Layout Fix */
+        .pdf-converter-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
         /* File Upload Areas */
         .upload-area {
             border: 2px dashed #667eea;
@@ -787,6 +795,10 @@
             .qr-options {
                 grid-template-columns: 1fr;
             }
+             .pdf-converter-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
         }
 
         /* Pricing Modal */
@@ -1057,7 +1069,9 @@
             </div>
             <div class="tool-modal-body">
                 <p>Extract text, tables, and data from PDF files and convert to various formats with advanced table detection</p>
-                
+
+                      <!-- Fixed Layout: Side by Side -->
+                <div class="pdf-converter-layout">
                 <!-- Batch Options -->
                 <div class="batch-options" id="pdfBatchOptions">
                     <h4>Processing Options</h4>
