@@ -1758,20 +1758,24 @@ if (typeof pdfjsLib !== 'undefined') {
         </div>
     </div>
 
-    <!-- Processing Overlay -->
-    <div class="processing-overlay" id="processingOverlay">
-        <div class="processing-content">
-            <div class="spinner"></div>
-            <h3 id="processingTitle">Processing Files...</h3>
-            <p id="processingStatus">Please wait while we process your files</p>
-            <div style="margin-top: 20px;">
-                <div style="background: #e9ecef; border-radius: 10px; height: 8px;">
-                    <div id="processingProgress" style="background: #667eea; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
-                </div>
-                <div style="margin-top: 10px; font-size: 0.9em; color: #666;" id="processingDetails">Initializing...</div>
+<!-- Processing Overlay -->
+<div class="processing-overlay" id="processingOverlay">
+    <div class="processing-content">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div></div>
+            <button class="tool-modal-close" onclick="cancelProcessing()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+        </div>
+        <div class="spinner"></div>
+        <h3 id="processingTitle">Processing Files...</h3>
+        <p id="processingStatus">Please wait while we process your files</p>
+        <div style="margin-top: 20px;">
+            <div style="background: #e9ecef; border-radius: 10px; height: 8px;">
+                <div id="processingProgress" style="background: #667eea; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
             </div>
+            <div style="margin-top: 10px; font-size: 0.9em; color: #666;" id="processingDetails">Initializing...</div>
         </div>
     </div>
+</div>
 
     <!-- Toast Container -->
     <div id="toastContainer"></div>
@@ -2067,6 +2071,16 @@ if (typeof pdfjsLib !== 'undefined') {
                     }
                 }
             });
+
+			// ESC key handler for processing modal
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const processingOverlay = document.getElementById('processingOverlay');
+        if (processingOverlay && processingOverlay.classList.contains('active')) {
+            cancelProcessing();
+        }
+    }
+});
         }
 
         // File Handling
@@ -2165,11 +2179,6 @@ if (typeof pdfjsLib !== 'undefined') {
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
-
-		// Call this when user clicks 'X' or presses ESC on processing modal
-function onProcessingModalClose() {
-    cancelPdfProcessing();
-}
 
 // Global variables for PDF processing
 let combineMode = 'combine'; // 'combine' or 'separate'
@@ -3779,24 +3788,37 @@ function cancelPdfProcessing() {
             hideFilenameModal();
         }
 
-        // Processing Overlay Functions
-        function showProcessing(title, status) {
-            document.getElementById('processingTitle').textContent = title;
-            document.getElementById('processingStatus').textContent = status;
-            document.getElementById('processingProgress').style.width = '0%';
-            document.getElementById('processingDetails').textContent = 'Initializing...';
-            document.getElementById('processingOverlay').classList.add('active');
-        }
+// Processing Overlay Functions
+function showProcessing(title, status) {
+    document.getElementById('processingTitle').textContent = title;
+    document.getElementById('processingStatus').textContent = status;
+    document.getElementById('processingProgress').style.width = '0%';
+    document.getElementById('processingDetails').textContent = 'Initializing...';
+    document.getElementById('processingOverlay').classList.add('active');
+}
 
-        function hideProcessing() {
-            document.getElementById('processingOverlay').classList.remove('active');
-        }
+function hideProcessing() {
+    // Cancel any ongoing processing when hiding the processing modal
+    if (typeof isProcessingCancelled !== 'undefined') {
+        isProcessingCancelled = true;
+    }
+    document.getElementById('processingOverlay').classList.remove('active');
+}
 
-        function updateProcessingProgress(current, total, details) {
-            const percent = ((current + 1) / total) * 100;
-            document.getElementById('processingProgress').style.width = percent + '%';
-            document.getElementById('processingDetails').textContent = details || `Processing ${current + 1} of ${total}...`;
-        }
+function updateProcessingProgress(current, total, details) {
+    const percent = ((current + 1) / total) * 100;
+    document.getElementById('processingProgress').style.width = percent + '%';
+    document.getElementById('processingDetails').textContent = details || `Processing ${current + 1} of ${total}...`;
+}
+
+// Add this new function to handle manual processing cancellation
+function cancelProcessing() {
+    if (typeof isProcessingCancelled !== 'undefined') {
+        isProcessingCancelled = true;
+    }
+    hideProcessing();
+    showToast('Processing cancelled', 'info');
+}
 
         // Modal Functions
         function showPricing() {
