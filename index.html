@@ -2166,438 +2166,531 @@ if (typeof pdfjsLib !== 'undefined') {
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // Global variables for PDF processing
-        let combineMode = 'combine'; // 'combine' or 'separate'
-        let pendingSaveCallback = null;
+		// Call this when user clicks 'X' or presses ESC on processing modal
+function onProcessingModalClose() {
+    cancelPdfProcessing();
+}
 
-        // Update batch option selection to show/hide combine options
-        function selectBatchOption(type, mode) {
-            const tier = tierLimits[currentTier];
-            
-            if (mode === 'batch' && tier.batch <= 1) {
-                showToast('Batch processing requires a Free Account or Premium subscription', 'warning');
-                showPricing();
+// Global variables for PDF processing
+let combineMode = 'combine'; // 'combine' or 'separate'
+let pendingSaveCallback = null;
+let isProcessingCancelled = false; // Add this new global variable
+
+// Update batch option selection to show/hide combine options
+function selectBatchOption(type, mode) {
+    const tier = tierLimits[currentTier];
+    
+    if (mode === 'batch' && tier.batch <= 1) {
+        showToast('Batch processing requires a Free Account or Premium subscription', 'warning');
+        showPricing();
+        return;
+    }
+    
+    batchMode[type] = mode;
+    
+    document.querySelectorAll(`#${type}BatchOptions .batch-option`).forEach(option => {
+        if (!option.id.includes('combine') && !option.id.includes('separate')) {
+            option.classList.remove('selected');
+        }
+    });
+    
+    const selectedOption = mode === 'single' ? 
+        document.getElementById(`single${type.charAt(0).toUpperCase() + type.slice(1)}Option`) :
+        document.getElementById(`batch${type.charAt(0).toUpperCase() + type.slice(1)}Option`);
+        
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+    }
+    
+    // Show/hide batch processing options
+    const batchProcessingOptions = document.getElementById('batchProcessingOptions');
+    if (type === 'pdf' && batchProcessingOptions) {
+        if (mode === 'batch') {
+            batchProcessingOptions.style.display = 'block';
+        } else {
+            batchProcessingOptions.style.display = 'none';
+        }
+    }
+    
+    const fileInput = document.getElementById(`${type}FileInput`);
+    if (fileInput) {
+        fileInput.multiple = mode === 'batch';
+    }
+}
+
+// Select combine option for batch processing
+function selectCombineOption(mode) {
+    combineMode = mode;
+    document.querySelectorAll('input[name="combineMode"]').forEach(radio => {
+        radio.checked = radio.value === mode;
+    });
+    
+    document.querySelectorAll('#batchProcessingOptions .batch-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    const selectedOption = mode === 'combine' ? 
+        document.getElementById('combineOption') : 
+        document.getElementById('separateOption');
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+    }
+}
+
+// Enhanced PDF Converter Functions with Save As Dialog
+async function convertPdfToFormat() {
+    const files = selectedFiles.pdf;
+    if (files.length === 0) {
+        showToast('Please select PDF files to convert', 'error');
+        return;
+    }
+
+    if (!canProcessFiles(files.length)) {
+        const tier = tierLimits[currentTier];
+        showToast(`Usage limit exceeded! Your tier allows ${tier.daily} files per day and ${tier.batch} files per batch.`, 'error');
+        return;
+    }
+
+    const outputFormat = document.getElementById('pdfOutputFormat').value;
+    const detectTables = document.getElementById('detectTables').checked;
+    
+    // Reset cancellation flag
+    isProcessingCancelled = false;
+    
+    showProcessing('Converting PDF...', 'Processing your PDF files with advanced table detection');
+    
+    try {
+        if (batchMode.pdf === 'batch' && files.length > 1) {
+            if (combineMode === 'combine') {
+                // Combine all PDFs into one output file
+                await processCombinedPdfs(files, outputFormat, detectTables);
+            } else {
+                // Process each PDF separately
+                await processSeparatePdfs(files, outputFormat, detectTables);
+            }
+        } else {
+            // Single file processing
+            await processSeparatePdfs(files, outputFormat, detectTables);
+        }
+
+        if (!isProcessingCancelled) {
+            incrementUsage(files.length);
+            hideProcessing();
+            showToast('PDF conversion completed!', 'success');
+            clearFiles('pdf');
+        }
+        
+    } catch (error) {
+        console.error('PDF conversion error:', error);
+        if (!isProcessingCancelled) {
+            hideProcessing();
+            showToast('Error converting PDF. Please try again.', 'error');
+        }
+    }
+}
+
+// Process multiple PDFs as separate files
+async function processSeparatePdfs(files, outputFormat, detectTables) {
+    for (let i = 0; i < files.length; i++) {
+        // Check if processing was cancelled
+        if (isProcessingCancelled) {
+            return;
+        }
+        
+        const file = files[i];
+        updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
+        
+        const defaultName = file.name.replace('.pdf', '');
+        const extension = getExtensionForFormat(outputFormat);
+        
+        await new Promise((resolve) => {
+            // Check if processing was cancelled before showing save dialog
+            if (isProcessingCancelled) {
+                resolve();
                 return;
             }
             
-            batchMode[type] = mode;
-            
-            document.querySelectorAll(`#${type}BatchOptions .batch-option`).forEach(option => {
-                if (!option.id.includes('combine') && !option.id.includes('separate')) {
-                    option.classList.remove('selected');
-                }
-            });
-            
-            const selectedOption = mode === 'single' ? 
-                document.getElementById(`single${type.charAt(0).toUpperCase() + type.slice(1)}Option`) :
-                document.getElementById(`batch${type.charAt(0).toUpperCase() + type.slice(1)}Option`);
-                
-            if (selectedOption) {
-                selectedOption.classList.add('selected');
-            }
-            
-            // Show/hide batch processing options
-            const batchProcessingOptions = document.getElementById('batchProcessingOptions');
-            if (type === 'pdf' && batchProcessingOptions) {
-                if (mode === 'batch') {
-                    batchProcessingOptions.style.display = 'block';
-                } else {
-                    batchProcessingOptions.style.display = 'none';
-                }
-            }
-            
-            const fileInput = document.getElementById(`${type}FileInput`);
-            if (fileInput) {
-                fileInput.multiple = mode === 'batch';
-            }
-        }
-
-        // Select combine option for batch processing
-        function selectCombineOption(mode) {
-            combineMode = mode;
-            document.querySelectorAll('input[name="combineMode"]').forEach(radio => {
-                radio.checked = radio.value === mode;
-            });
-            
-            document.querySelectorAll('#batchProcessingOptions .batch-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            const selectedOption = mode === 'combine' ? 
-                document.getElementById('combineOption') : 
-                document.getElementById('separateOption');
-            if (selectedOption) {
-                selectedOption.classList.add('selected');
-            }
-        }
-
-        // Enhanced PDF Converter Functions with Save As Dialog
-        async function convertPdfToFormat() {
-            const files = selectedFiles.pdf;
-            if (files.length === 0) {
-                showToast('Please select PDF files to convert', 'error');
-                return;
-            }
-
-            if (!canProcessFiles(files.length)) {
-                const tier = tierLimits[currentTier];
-                showToast(`Usage limit exceeded! Your tier allows ${tier.daily} files per day and ${tier.batch} files per batch.`, 'error');
-                return;
-            }
-
-            const outputFormat = document.getElementById('pdfOutputFormat').value;
-            const detectTables = document.getElementById('detectTables').checked;
-            
-            showProcessing('Converting PDF...', 'Processing your PDF files with advanced table detection');
-            
-            try {
-                if (batchMode.pdf === 'batch' && files.length > 1) {
-                    if (combineMode === 'combine') {
-                        // Combine all PDFs into one output file
-                        await processCombinedPdfs(files, outputFormat, detectTables);
-                    } else {
-                        // Process each PDF separately
-                        await processSeparatePdfs(files, outputFormat, detectTables);
-                    }
-                } else {
-                    // Single file processing
-                    await processSeparatePdfs(files, outputFormat, detectTables);
-                }
-
-                incrementUsage(files.length);
-                hideProcessing();
-                showToast('PDF conversion completed!', 'success');
-                clearFiles('pdf');
-                
-            } catch (error) {
-                console.error('PDF conversion error:', error);
-                hideProcessing();
-                showToast('Error converting PDF. Please try again.', 'error');
-            }
-        }
-
-        // Process multiple PDFs as separate files
-        async function processSeparatePdfs(files, outputFormat, detectTables) {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
-                
-                const defaultName = file.name.replace('.pdf', '');
-                const extension = getExtensionForFormat(outputFormat);
-                
-                await new Promise((resolve) => {
-                    showSaveAsModal(
-                        `Save ${outputFormat.toUpperCase()} File`, 
-                        defaultName, 
-                        async (fileName, location) => {
-                            try {
-                                const extractedData = await extractPdfData(file, detectTables);
-                                await downloadProcessedFile(extractedData, fileName + extension, outputFormat, location);
-                                resolve();
-                            } catch (error) {
-                                console.error('Error converting PDF:', error);
-                                showToast(`Error processing ${file.name}`, 'error');
-                                resolve();
-                            }
-                        }
-                    );
-                });
-            }
-        }
-
-        // Process multiple PDFs as one combined file
-        async function processCombinedPdfs(files, outputFormat, detectTables) {
-            updateProcessingProgress(0, 1, 'Combining PDF files...');
-            
-            const combinedData = [];
-            let allTables = [];
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
-                
-                const extractedData = await extractPdfData(file, detectTables);
-                combinedData.push(...extractedData);
-                
-                // Collect all tables if table detection is enabled
-                if (detectTables) {
-                    extractedData.forEach(page => {
-                        if (page.tables && page.tables.length > 0) {
-                            allTables.push(...page.tables);
-                        }
-                    });
-                }
-            }
-            
-            const defaultName = `combined_pdfs_${Date.now()}`;
-            const extension = getExtensionForFormat(outputFormat);
-            
-            await new Promise((resolve) => {
-                showSaveAsModal(
-                    `Save Combined ${outputFormat.toUpperCase()} File`, 
-                    defaultName, 
-                    async (fileName, location) => {
-                        try {
-                            await downloadProcessedFile(combinedData, fileName + extension, outputFormat, location, allTables);
+            showSaveAsModal(
+                `Save ${outputFormat.toUpperCase()} File`, 
+                defaultName, 
+                async (fileName, location) => {
+                    try {
+                        // Check if processing was cancelled during save dialog
+                        if (isProcessingCancelled) {
                             resolve();
-                        } catch (error) {
-                            console.error('Error creating combined file:', error);
-                            showToast('Error creating combined file', 'error');
-                            resolve();
+                            return;
                         }
+                        
+                        const extractedData = await extractPdfData(file, detectTables);
+                        
+                        // Check again after extraction
+                        if (!isProcessingCancelled) {
+                            await downloadProcessedFile(extractedData, fileName + extension, outputFormat, location);
+                        }
+                        resolve();
+                    } catch (error) {
+                        console.error('Error converting PDF:', error);
+                        if (!isProcessingCancelled) {
+                            showToast(`Error processing ${file.name}`, 'error');
+                        }
+                        resolve();
                     }
-                );
+                }
+            );
+        });
+    }
+}
+
+// Process multiple PDFs as one combined file
+async function processCombinedPdfs(files, outputFormat, detectTables) {
+    updateProcessingProgress(0, 1, 'Combining PDF files...');
+    
+    const combinedData = [];
+    let allTables = [];
+    
+    for (let i = 0; i < files.length; i++) {
+        // Check if processing was cancelled
+        if (isProcessingCancelled) {
+            return;
+        }
+        
+        const file = files[i];
+        updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
+        
+        const extractedData = await extractPdfData(file, detectTables);
+        
+        // Check again after extraction
+        if (isProcessingCancelled) {
+            return;
+        }
+        
+        combinedData.push(...extractedData);
+        
+        // Collect all tables if table detection is enabled
+        if (detectTables) {
+            extractedData.forEach(page => {
+                if (page.tables && page.tables.length > 0) {
+                    allTables.push(...page.tables);
+                }
             });
         }
-
-        // Extract data from PDF using PDF.js
-        async function extractPdfData(file, detectTables) {
-            if (typeof pdfjsLib === 'undefined') {
-                throw new Error('PDF.js library not loaded');
-            }
-
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-            
-            let extractedData = [];
-            
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                const page = await pdf.getPage(pageNum);
-                const textContent = await page.getTextContent();
-                
-                let pageText = '';
-                let tables = [];
-                
-                if (detectTables) {
-                    const tableData = detectTablesInPage(textContent);
-                    tables = tableData.tables;
-                    pageText = tableData.remainingText;
-                } else {
-                    pageText = textContent.items.map(item => item.str).join(' ');
+    }
+    
+    // Check if processing was cancelled before showing save dialog
+    if (isProcessingCancelled) {
+        return;
+    }
+    
+    const defaultName = `combined_pdfs_${Date.now()}`;
+    const extension = getExtensionForFormat(outputFormat);
+    
+    await new Promise((resolve) => {
+        showSaveAsModal(
+            `Save Combined ${outputFormat.toUpperCase()} File`, 
+            defaultName, 
+            async (fileName, location) => {
+                try {
+                    // Check if processing was cancelled during save dialog
+                    if (!isProcessingCancelled) {
+                        await downloadProcessedFile(combinedData, fileName + extension, outputFormat, location, allTables);
+                    }
+                    resolve();
+                } catch (error) {
+                    console.error('Error creating combined file:', error);
+                    if (!isProcessingCancelled) {
+                        showToast('Error creating combined file', 'error');
+                    }
+                    resolve();
                 }
-                
-                extractedData.push({
-                    page: pageNum,
-                    text: pageText,
-                    tables: tables,
-                    fileName: file.name,
-                    items: textContent.items
-                });
             }
-            
-            return extractedData;
+        );
+    });
+}
+
+// Extract data from PDF using PDF.js
+async function extractPdfData(file, detectTables) {
+    // Check if processing was cancelled before starting
+    if (isProcessingCancelled) {
+        throw new Error('Processing cancelled');
+    }
+    
+    if (typeof pdfjsLib === 'undefined') {
+        throw new Error('PDF.js library not loaded');
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+    
+    let extractedData = [];
+    
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        // Check if processing was cancelled during page processing
+        if (isProcessingCancelled) {
+            throw new Error('Processing cancelled');
         }
+        
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        let pageText = '';
+        let tables = [];
+        
+        if (detectTables) {
+            const tableData = detectTablesInPage(textContent);
+            tables = tableData.tables;
+            pageText = tableData.remainingText;
+        } else {
+            pageText = textContent.items.map(item => item.str).join(' ');
+        }
+        
+        extractedData.push({
+            page: pageNum,
+            text: pageText,
+            tables: tables,
+            fileName: file.name,
+            items: textContent.items
+        });
+    }
+    
+    return extractedData;
+}
 
-        // Enhanced table detection function
-        function detectTablesInPage(textContent) {
-            const items = textContent.items;
-            const tables = [];
-            const remainingText = [];
+// Enhanced table detection function
+function detectTablesInPage(textContent) {
+    const items = textContent.items;
+    const tables = [];
+    const remainingText = [];
 
-            // Group items by y-coordinate (rows)
-            const rowGroups = {};
-            items.forEach(item => {
-                const y = Math.round(item.transform[5] / 2) * 2; // Group nearby y-coordinates
-                if (!rowGroups[y]) rowGroups[y] = [];
-                rowGroups[y].push(item);
-            });
+    // Group items by y-coordinate (rows)
+    const rowGroups = {};
+    items.forEach(item => {
+        const y = Math.round(item.transform[5] / 2) * 2; // Group nearby y-coordinates
+        if (!rowGroups[y]) rowGroups[y] = [];
+        rowGroups[y].push(item);
+    });
 
-            // Sort rows by y-coordinate (top to bottom)
-            const sortedRows = Object.keys(rowGroups).sort((a, b) => b - a).map(y => rowGroups[y]);
+    // Sort rows by y-coordinate (top to bottom)
+    const sortedRows = Object.keys(rowGroups).sort((a, b) => b - a).map(y => rowGroups[y]);
 
-            // Detect table patterns
-            const tableRows = [];
-            const nonTableRows = [];
-            
-            for (const row of sortedRows) {
-                const sortedRowItems = row.sort((a, b) => a.transform[4] - b.transform[4]);
-                
-                if (sortedRowItems.length >= 2) {
-                    // Calculate spacing between items
-                    const spacings = [];
-                    for (let j = 1; j < sortedRowItems.length; j++) {
-                        spacings.push(sortedRowItems[j].transform[4] - sortedRowItems[j-1].transform[4]);
-                    }
-                    
-                    const avgSpacing = spacings.reduce((a, b) => a + b, 0) / spacings.length;
-                    const isConsistentSpacing = spacings.every(s => Math.abs(s - avgSpacing) < avgSpacing * 0.6);
-                    
-                    if (isConsistentSpacing && sortedRowItems.length >= 2 && avgSpacing > 20) {
-                        const cleanRow = sortedRowItems.map(item => item.str.trim()).filter(str => str);
-                        if (cleanRow.length >= 2) {
-                            tableRows.push(cleanRow);
-                        } else {
-                            nonTableRows.push(sortedRowItems.map(item => item.str).join(' '));
-                        }
-                    } else {
-                        nonTableRows.push(sortedRowItems.map(item => item.str).join(' '));
-                    }
-                } else {
-                    nonTableRows.push(row.map(item => item.str).join(' '));
-                }
+    // Detect table patterns
+    const tableRows = [];
+    const nonTableRows = [];
+    
+    for (const row of sortedRows) {
+        const sortedRowItems = row.sort((a, b) => a.transform[4] - b.transform[4]);
+        
+        if (sortedRowItems.length >= 2) {
+            // Calculate spacing between items
+            const spacings = [];
+            for (let j = 1; j < sortedRowItems.length; j++) {
+                spacings.push(sortedRowItems[j].transform[4] - sortedRowItems[j-1].transform[4]);
             }
-
-            // Group consecutive table rows
-            if (tableRows.length > 0) {
-                let currentTable = [];
-                let expectedColumns = tableRows[0].length;
-                
-                for (const row of tableRows) {
-                    if (Math.abs(row.length - expectedColumns) <= 1) {
-                        currentTable.push(row);
-                    } else {
-                        if (currentTable.length >= 2) {
-                            tables.push(currentTable);
-                        }
-                        currentTable = [row];
-                        expectedColumns = row.length;
-                    }
+            
+            const avgSpacing = spacings.reduce((a, b) => a + b, 0) / spacings.length;
+            const isConsistentSpacing = spacings.every(s => Math.abs(s - avgSpacing) < avgSpacing * 0.6);
+            
+            if (isConsistentSpacing && sortedRowItems.length >= 2 && avgSpacing > 20) {
+                const cleanRow = sortedRowItems.map(item => item.str.trim()).filter(str => str);
+                if (cleanRow.length >= 2) {
+                    tableRows.push(cleanRow);
+                } else {
+                    nonTableRows.push(sortedRowItems.map(item => item.str).join(' '));
                 }
-                
+            } else {
+                nonTableRows.push(sortedRowItems.map(item => item.str).join(' '));
+            }
+        } else {
+            nonTableRows.push(row.map(item => item.str).join(' '));
+        }
+    }
+
+    // Group consecutive table rows
+    if (tableRows.length > 0) {
+        let currentTable = [];
+        let expectedColumns = tableRows[0].length;
+        
+        for (const row of tableRows) {
+            if (Math.abs(row.length - expectedColumns) <= 1) {
+                currentTable.push(row);
+            } else {
                 if (currentTable.length >= 2) {
                     tables.push(currentTable);
                 }
+                currentTable = [row];
+                expectedColumns = row.length;
             }
-
-            return {
-                tables: tables,
-                remainingText: nonTableRows.join('\n').trim()
-            };
         }
+        
+        if (currentTable.length >= 2) {
+            tables.push(currentTable);
+        }
+    }
 
-        // Download processed file with format-specific handling
-        async function downloadProcessedFile(data, filename, format, location, allTables = null) {
-            let blob;
+    return {
+        tables: tables,
+        remainingText: nonTableRows.join('\n').trim()
+    };
+}
+
+// Download processed file with format-specific handling
+async function downloadProcessedFile(data, filename, format, location, allTables = null) {
+    // Check if processing was cancelled before creating file
+    if (isProcessingCancelled) {
+        return;
+    }
+    
+    let blob;
+    
+    switch (format) {
+        case 'txt':
+            const textContent = data.map(page => {
+                let content = `--- Page ${page.page} ---\n${page.text}`;
+                if (page.fileName) content = `--- ${page.fileName} - Page ${page.page} ---\n${page.text}`;
+                return content;
+            }).join('\n\n');
+            blob = new Blob([textContent], { type: 'text/plain' });
+            break;
             
-            switch (format) {
-                case 'txt':
-                    const textContent = data.map(page => {
-                        let content = `--- Page ${page.page} ---\n${page.text}`;
-                        if (page.fileName) content = `--- ${page.fileName} - Page ${page.page} ---\n${page.text}`;
-                        return content;
-                    }).join('\n\n');
-                    blob = new Blob([textContent], { type: 'text/plain' });
-                    break;
+        case 'csv':
+            let csvContent = '';
+            const tables = allTables || data.flatMap(page => page.tables || []);
+            
+            if (tables.length > 0) {
+                tables.forEach((table, tableIndex) => {
+                    if (tableIndex > 0) csvContent += '\n';
+                    csvContent += `"Table ${tableIndex + 1}"\n`;
                     
-                case 'csv':
-                    let csvContent = '';
-                    const tables = allTables || data.flatMap(page => page.tables || []);
-                    
-                    if (tables.length > 0) {
-                        tables.forEach((table, tableIndex) => {
-                            if (tableIndex > 0) csvContent += '\n';
-                            csvContent += `"Table ${tableIndex + 1}"\n`;
-                            
-                            table.forEach(row => {
-                                const escapedRow = row.map(cell => `"${String(cell).replace(/"/g, '""')}"`);
-                                csvContent += escapedRow.join(',') + '\n';
-                            });
-                            csvContent += '\n';
-                        });
-                    } else {
-                        csvContent = 'Source,Page,Content\n';
-                        data.forEach(page => {
-                            const source = page.fileName || 'PDF';
-                            const escapedText = page.text.replace(/"/g, '""');
-                            csvContent += `"${source}",${page.page},"${escapedText}"\n`;
-                        });
-                    }
-                    blob = new Blob([csvContent], { type: 'text/csv' });
-                    break;
-                    
-                case 'json':
-                    const jsonData = {
-                        extractedAt: new Date().toISOString(),
-                        totalPages: data.length,
-                        files: data.reduce((acc, page) => {
-                            const fileName = page.fileName || 'unknown.pdf';
-                            if (!acc[fileName]) {
-                                acc[fileName] = { pages: [], tables: [] };
-                            }
-                            acc[fileName].pages.push({
-                                pageNumber: page.page,
-                                text: page.text,
-                                wordCount: page.text.split(/\s+/).length
-                            });
-                            if (page.tables) {
-                                acc[fileName].tables.push(...page.tables);
-                            }
-                            return acc;
-                        }, {}),
-                        tables: allTables || data.flatMap(page => page.tables || [])
-                    };
-                    blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-                    break;
-                    
-                case 'docx':
-                    // Simple Word document creation
-                    const wordContent = data.map(page => {
-                        let content = `Page ${page.page}\n${page.text}`;
-                        if (page.fileName) content = `${page.fileName} - Page ${page.page}\n${page.text}`;
-                        return content;
-                    }).join('\n\n');
-                    
-                    blob = new Blob([wordContent], { 
-                        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+                    table.forEach(row => {
+                        const escapedRow = row.map(cell => `"${String(cell).replace(/"/g, '""')}"`);
+                        csvContent += escapedRow.join(',') + '\n';
                     });
-                    break;
-                    
-                default:
-                    throw new Error('Unsupported format');
+                    csvContent += '\n';
+                });
+            } else {
+                csvContent = 'Source,Page,Content\n';
+                data.forEach(page => {
+                    const source = page.fileName || 'PDF';
+                    const escapedText = page.text.replace(/"/g, '""');
+                    csvContent += `"${source}",${page.page},"${escapedText}"\n`;
+                });
             }
+            blob = new Blob([csvContent], { type: 'text/csv' });
+            break;
             
-            downloadBlob(blob, filename);
-        }
-
-        function getExtensionForFormat(format) {
-            const extensions = {
-                'txt': '.txt',
-                'docx': '.docx',
-                'csv': '.csv',
-                'json': '.json'
+        case 'json':
+            const jsonData = {
+                extractedAt: new Date().toISOString(),
+                totalPages: data.length,
+                files: data.reduce((acc, page) => {
+                    const fileName = page.fileName || 'unknown.pdf';
+                    if (!acc[fileName]) {
+                        acc[fileName] = { pages: [], tables: [] };
+                    }
+                    acc[fileName].pages.push({
+                        pageNumber: page.page,
+                        text: page.text,
+                        wordCount: page.text.split(/\s+/).length
+                    });
+                    if (page.tables) {
+                        acc[fileName].tables.push(...page.tables);
+                    }
+                    return acc;
+                }, {}),
+                tables: allTables || data.flatMap(page => page.tables || [])
             };
-            return extensions[format] || '.txt';
-        }
-
-        // Save As Modal Functions
-        function showSaveAsModal(title, defaultName, callback) {
-            document.getElementById('saveAsTitle').textContent = title;
-            document.getElementById('saveAsFileName').value = defaultName;
-            document.getElementById('saveAsModal').classList.add('active');
-            pendingSaveCallback = callback;
-        }
-
-        function hideSaveAsModal() {
-            document.getElementById('saveAsModal').classList.remove('active');
-            pendingSaveCallback = null;
-        }
-
-        function confirmSaveAs() {
-            const fileName = document.getElementById('saveAsFileName').value.trim();
-            const location = document.getElementById('saveAsLocation').value;
+            blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+            break;
             
-            if (!fileName) {
-                showToast('Please enter a file name', 'error');
-                return;
-            }
+        case 'docx':
+            // Simple Word document creation
+            const wordContent = data.map(page => {
+                let content = `Page ${page.page}\n${page.text}`;
+                if (page.fileName) content = `${page.fileName} - Page ${page.page}\n${page.text}`;
+                return content;
+            }).join('\n\n');
             
-            if (pendingSaveCallback) {
-                pendingSaveCallback(fileName, location);
-            }
-            hideSaveAsModal();
-        }
+            blob = new Blob([wordContent], { 
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+            });
+            break;
+            
+        default:
+            throw new Error('Unsupported format');
+    }
+    
+    // Final check before download
+    if (!isProcessingCancelled) {
+        downloadBlob(blob, filename);
+    }
+}
 
-        // Enhanced downloadBlob function with location awareness
-        function downloadBlob(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } 
+function getExtensionForFormat(format) {
+    const extensions = {
+        'txt': '.txt',
+        'docx': '.docx',
+        'csv': '.csv',
+        'json': '.json'
+    };
+    return extensions[format] || '.txt';
+}
+
+// Save As Modal Functions
+function showSaveAsModal(title, defaultName, callback) {
+    // Don't show save dialog if processing was cancelled
+    if (isProcessingCancelled) {
+        return;
+    }
+    
+    document.getElementById('saveAsTitle').textContent = title;
+    document.getElementById('saveAsFileName').value = defaultName;
+    document.getElementById('saveAsModal').classList.add('active');
+    pendingSaveCallback = callback;
+}
+
+function hideSaveAsModal() {
+    document.getElementById('saveAsModal').classList.remove('active');
+    pendingSaveCallback = null;
+}
+
+function confirmSaveAs() {
+    const fileName = document.getElementById('saveAsFileName').value.trim();
+    const location = document.getElementById('saveAsLocation').value;
+    
+    if (!fileName) {
+        showToast('Please enter a file name', 'error');
+        return;
+    }
+    
+    if (pendingSaveCallback) {
+        pendingSaveCallback(fileName, location);
+    }
+    hideSaveAsModal();
+}
+
+// Enhanced downloadBlob function with location awareness
+function downloadBlob(blob, filename) {
+    // Don't download if processing was cancelled
+    if (isProcessingCancelled) {
+        return;
+    }
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Add this new function to handle cancellation
+function cancelPdfProcessing() {
+    isProcessingCancelled = true;
+    hideProcessing();
+    hideSaveAsModal();
+    showToast('PDF conversion cancelled', 'info');
+}
 
         // Convert to PDF Functions
         async function convertToPdf() {
