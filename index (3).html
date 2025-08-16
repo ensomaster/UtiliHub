@@ -6,6 +6,11 @@
     <title>🚀 UtiliHub - Your All-in-One Utility Tools Hub</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1061,7 +1066,7 @@
         </div>
     </div>
 
-    <!-- PDF Converter Modal -->
+<!-- PDF Converter Modal -->
     <div class="tool-modal" id="pdf-converter-modal">
         <div class="tool-modal-content">
             <div class="tool-modal-header">
@@ -1071,52 +1076,73 @@
             <div class="tool-modal-body">
                 <p>Extract text, tables, and data from PDF files and convert to various formats with advanced table detection</p>
 
-                      <!-- Fixed Layout: Side by Side -->
+                <!-- Fixed Layout: Side by Side -->
                 <div class="pdf-converter-layout">
-                <!-- Batch Options -->
-                <div class="batch-options" id="pdfBatchOptions">
-                    <h4>Processing Options</h4>
-                    <div class="batch-option selected" id="singlePdfOption" onclick="selectBatchOption('pdf', 'single')">
-                        <div>
-                            <strong>Process Single File</strong>
-                            <div style="font-size: 0.9em; color: #666;">Convert one PDF at a time</div>
+                    <!-- Batch Options -->
+                    <div class="batch-options" id="pdfBatchOptions">
+                        <h4>Processing Options</h4>
+                        <div class="batch-option selected" id="singlePdfOption" onclick="selectBatchOption('pdf', 'single')">
+                            <div>
+                                <strong>Process Single File</strong>
+                                <div style="font-size: 0.9em; color: #666;">Convert one PDF at a time</div>
+                            </div>
+                            <div style="color: #28a745; font-weight: bold;">Available</div>
                         </div>
-                        <div style="color: #28a745; font-weight: bold;">Available</div>
-                    </div>
-                    <div class="batch-option" id="batchPdfOption" onclick="selectBatchOption('pdf', 'batch')">
-                        <div>
-                            <strong>Process Multiple Files</strong>
-                            <div style="font-size: 0.9em; color: #666;" id="pdfBatchDescription">Batch convert multiple PDFs</div>
+                        <div class="batch-option" id="batchPdfOption" onclick="selectBatchOption('pdf', 'batch')">
+                            <div>
+                                <strong>Process Multiple Files</strong>
+                                <div style="font-size: 0.9em; color: #666;" id="pdfBatchDescription">Batch convert multiple PDFs</div>
+                            </div>
+                            <div style="color: #dc3545; font-weight: bold;" id="pdfBatchStatus">Upgrade Required</div>
                         </div>
-                        <div style="color: #dc3545; font-weight: bold;" id="pdfBatchStatus">Upgrade Required</div>
+                        
+                        <!-- Batch Processing Options (shown only when batch is selected) -->
+                        <div id="batchProcessingOptions" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border: 1px solid #e9ecef;">
+                            <h5>Batch Processing Mode</h5>
+                            <div class="batch-option" id="combineOption" onclick="selectCombineOption('combine')">
+                                <div>
+                                    <strong>Combine All Files</strong>
+                                    <div style="font-size: 0.9em; color: #666;">Merge all PDFs into one output file</div>
+                                </div>
+                                <input type="radio" name="combineMode" value="combine" checked>
+                            </div>
+                            <div class="batch-option" id="separateOption" onclick="selectCombineOption('separate')">
+                                <div>
+                                    <strong>Process Separately</strong>
+                                    <div style="font-size: 0.9em; color: #666;">Convert each PDF to individual files</div>
+                                </div>
+                                <input type="radio" name="combineMode" value="separate">
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="upload-area" id="pdfUploadArea" onclick="document.getElementById('pdfFileInput').click()">
-                    <div class="upload-icon">📄</div>
-                    <div class="upload-text">Drag & drop your PDF files here or click to select</div>
-                    <div class="upload-subtext">Supports: .pdf files</div>
-                </div>
-                <input type="file" id="pdfFileInput" multiple accept=".pdf" style="display: none;">
-                
-                <div class="form-group">
-                    <label class="form-label">Output Format</label>
-                    <select class="form-control" id="pdfOutputFormat">
-                        <option value="txt">Plain Text (.txt)</option>
-                        <option value="docx">Word Document (.docx)</option>
-                        <option value="xlsx">Excel Spreadsheet (.xlsx)</option>
-                        <option value="csv">CSV File (.csv)</option>
-                        <option value="json">JSON Data (.json)</option>
-                    </select>
-                </div>
+                    
+                    <div>
+                        <div class="upload-area" id="pdfUploadArea" onclick="document.getElementById('pdfFileInput').click()">
+                            <div class="upload-icon">📄</div>
+                            <div class="upload-text">Drag & drop your PDF files here or click to select</div>
+                            <div class="upload-subtext">Supports: .pdf files</div>
+                        </div>
+                        <input type="file" id="pdfFileInput" multiple accept=".pdf" style="display: none;">
+                        
+                        <div class="form-group">
+                            <label class="form-label">Output Format</label>
+                            <select class="form-control" id="pdfOutputFormat">
+                                <option value="txt">Plain Text (.txt)</option>
+                                <option value="docx">Word Document (.docx)</option>
+                                <option value="csv">CSV File (.csv)</option>
+                                <option value="json">JSON Data (.json)</option>
+                            </select>
+                        </div>
 
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" id="detectTables" checked> 
-                        Advanced Table Detection (Recommended for Excel/CSV)
-                    </label>
-                    <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
-                        Automatically detects and preserves table structures in PDFs
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="detectTables" checked> 
+                                Advanced Table Detection (Recommended for CSV)
+                            </label>
+                            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                                Automatically detects and preserves table structures in PDFs
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1705,6 +1731,33 @@
         </div>
     </div>
 
+	<!-- Save As Modal -->
+    <div class="filename-modal" id="saveAsModal">
+        <div class="filename-modal-content" style="max-width: 500px;">
+            <h3 id="saveAsTitle">Save File As</h3>
+            <div class="form-group">
+                <label class="form-label">File Name</label>
+                <input type="text" class="form-control" id="saveAsFileName" placeholder="Enter file name">
+                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                    Extension will be added automatically based on format
+                </div>
+            </div>
+            <div class="form-group" id="saveAsLocationGroup">
+                <label class="form-label">Save Location</label>
+                <select class="form-control" id="saveAsLocation">
+                    <option value="downloads">Downloads Folder</option>
+                    <option value="desktop">Desktop</option>
+                    <option value="documents">Documents</option>
+                    <option value="custom">Choose Location...</option>
+                </select>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="confirmSaveAs()">Save File</button>
+                <button class="btn btn-secondary" onclick="hideSaveAsModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Processing Overlay -->
     <div class="processing-overlay" id="processingOverlay">
         <div class="processing-content">
@@ -1992,6 +2045,28 @@
                     }
                 }
             });
+
+			// Add event listener for Save As modal
+            document.getElementById('saveAsModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideSaveAsModal();
+                }
+            });
+
+            // Update the existing escape key handler to include Save As modal
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (document.querySelector('.tool-modal.active')) {
+                        closeTool();
+                    } else if (document.getElementById('pricingModal').classList.contains('active')) {
+                        hidePricing();
+                    } else if (document.getElementById('filenameModal').classList.contains('active')) {
+                        hideFilenameModal();
+                    } else if (document.getElementById('saveAsModal').classList.contains('active')) {
+                        hideSaveAsModal();
+                    }
+                }
+            });
         }
 
         // File Handling
@@ -2091,7 +2166,72 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // Enhanced PDF Converter Functions with Advanced Table Detection
+        // Global variables for PDF processing
+        let combineMode = 'combine'; // 'combine' or 'separate'
+        let pendingSaveCallback = null;
+
+        // Update batch option selection to show/hide combine options
+        function selectBatchOption(type, mode) {
+            const tier = tierLimits[currentTier];
+            
+            if (mode === 'batch' && tier.batch <= 1) {
+                showToast('Batch processing requires a Free Account or Premium subscription', 'warning');
+                showPricing();
+                return;
+            }
+            
+            batchMode[type] = mode;
+            
+            document.querySelectorAll(`#${type}BatchOptions .batch-option`).forEach(option => {
+                if (!option.id.includes('combine') && !option.id.includes('separate')) {
+                    option.classList.remove('selected');
+                }
+            });
+            
+            const selectedOption = mode === 'single' ? 
+                document.getElementById(`single${type.charAt(0).toUpperCase() + type.slice(1)}Option`) :
+                document.getElementById(`batch${type.charAt(0).toUpperCase() + type.slice(1)}Option`);
+                
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+            }
+            
+            // Show/hide batch processing options
+            const batchProcessingOptions = document.getElementById('batchProcessingOptions');
+            if (type === 'pdf' && batchProcessingOptions) {
+                if (mode === 'batch') {
+                    batchProcessingOptions.style.display = 'block';
+                } else {
+                    batchProcessingOptions.style.display = 'none';
+                }
+            }
+            
+            const fileInput = document.getElementById(`${type}FileInput`);
+            if (fileInput) {
+                fileInput.multiple = mode === 'batch';
+            }
+        }
+
+        // Select combine option for batch processing
+        function selectCombineOption(mode) {
+            combineMode = mode;
+            document.querySelectorAll('input[name="combineMode"]').forEach(radio => {
+                radio.checked = radio.value === mode;
+            });
+            
+            document.querySelectorAll('#batchProcessingOptions .batch-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            const selectedOption = mode === 'combine' ? 
+                document.getElementById('combineOption') : 
+                document.getElementById('separateOption');
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+            }
+        }
+
+        // Enhanced PDF Converter Functions with Save As Dialog
         async function convertPdfToFormat() {
             const files = selectedFiles.pdf;
             if (files.length === 0) {
@@ -2107,28 +2247,21 @@
 
             const outputFormat = document.getElementById('pdfOutputFormat').value;
             const detectTables = document.getElementById('detectTables').checked;
+            
             showProcessing('Converting PDF...', 'Processing your PDF files with advanced table detection');
             
             try {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
-                    
-                    const defaultName = file.name.replace('.pdf', '');
-                    const extension = getExtensionForFormat(outputFormat);
-                    
-                    await new Promise((resolve) => {
-                        showFilenameModal(`Save as ${outputFormat.toUpperCase()}`, defaultName, async (customName) => {
-                            try {
-                                await convertPdfToSpecificFormat(file, customName + extension, outputFormat, detectTables);
-                                resolve();
-                            } catch (error) {
-                                console.error('Error converting PDF:', error);
-                                showToast(`Error processing ${file.name}`, 'error');
-                                resolve();
-                            }
-                        });
-                    });
+                if (batchMode.pdf === 'batch' && files.length > 1) {
+                    if (combineMode === 'combine') {
+                        // Combine all PDFs into one output file
+                        await processCombinedPdfs(files, outputFormat, detectTables);
+                    } else {
+                        // Process each PDF separately
+                        await processSeparatePdfs(files, outputFormat, detectTables);
+                    }
+                } else {
+                    // Single file processing
+                    await processSeparatePdfs(files, outputFormat, detectTables);
                 }
 
                 incrementUsage(files.length);
@@ -2143,132 +2276,177 @@
             }
         }
 
-        function getExtensionForFormat(format) {
-            const extensions = {
-                'txt': '.txt',
-                'docx': '.docx',
-                'xlsx': '.xlsx',
-                'csv': '.csv',
-                'json': '.json'
-            };
-            return extensions[format] || '.txt';
+        // Process multiple PDFs as separate files
+        async function processSeparatePdfs(files, outputFormat, detectTables) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
+                
+                const defaultName = file.name.replace('.pdf', '');
+                const extension = getExtensionForFormat(outputFormat);
+                
+                await new Promise((resolve) => {
+                    showSaveAsModal(
+                        `Save ${outputFormat.toUpperCase()} File`, 
+                        defaultName, 
+                        async (fileName, location) => {
+                            try {
+                                const extractedData = await extractPdfData(file, detectTables);
+                                await downloadProcessedFile(extractedData, fileName + extension, outputFormat, location);
+                                resolve();
+                            } catch (error) {
+                                console.error('Error converting PDF:', error);
+                                showToast(`Error processing ${file.name}`, 'error');
+                                resolve();
+                            }
+                        }
+                    );
+                });
+            }
         }
 
-        async function convertPdfToSpecificFormat(file, filename, format, detectTables) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    if (typeof pdfjsLib === 'undefined') {
-                        throw new Error('PDF.js library not loaded');
-                    }
-
-                    const arrayBuffer = await file.arrayBuffer();
-                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                    
-                    let extractedData = [];
-                    let allTables = [];
-                    
-                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                        const page = await pdf.getPage(pageNum);
-                        const textContent = await page.getTextContent();
-                        
-                        let pageText = '';
-                        let tables = [];
-                        
-                        if (detectTables && (format === 'xlsx' || format === 'csv')) {
-                            // Advanced table detection
-                            const tableData = detectTablesInPage(textContent);
-                            tables = tableData.tables;
-                            pageText = tableData.remainingText;
-                            allTables.push(...tables);
-                        } else {
-                            pageText = textContent.items.map(item => item.str).join(' ');
+        // Process multiple PDFs as one combined file
+        async function processCombinedPdfs(files, outputFormat, detectTables) {
+            updateProcessingProgress(0, 1, 'Combining PDF files...');
+            
+            const combinedData = [];
+            let allTables = [];
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                updateProcessingProgress(i, files.length, `Processing ${file.name}...`);
+                
+                const extractedData = await extractPdfData(file, detectTables);
+                combinedData.push(...extractedData);
+                
+                // Collect all tables if table detection is enabled
+                if (detectTables) {
+                    extractedData.forEach(page => {
+                        if (page.tables && page.tables.length > 0) {
+                            allTables.push(...page.tables);
                         }
-                        
-                        extractedData.push({
-                            page: pageNum,
-                            text: pageText,
-                            tables: tables,
-                            items: textContent.items
-                        });
-                    }
-
-                    switch (format) {
-                        case 'txt':
-                            await createTextFile(extractedData, filename);
-                            break;
-                        case 'docx':
-                            await createWordDocument(extractedData, filename);
-                            break;
-                        case 'xlsx':
-                            await createExcelFileWithTables(extractedData, allTables, filename);
-                            break;
-                        case 'csv':
-                            await createCSVFileWithTables(extractedData, allTables, filename);
-                            break;
-                        case 'json':
-                            await createJSONFile(extractedData, filename);
-                            break;
-                    }
-                    
-                    resolve();
-                } catch (error) {
-                    reject(error);
+                    });
                 }
+            }
+            
+            const defaultName = `combined_pdfs_${Date.now()}`;
+            const extension = getExtensionForFormat(outputFormat);
+            
+            await new Promise((resolve) => {
+                showSaveAsModal(
+                    `Save Combined ${outputFormat.toUpperCase()} File`, 
+                    defaultName, 
+                    async (fileName, location) => {
+                        try {
+                            await downloadProcessedFile(combinedData, fileName + extension, outputFormat, location, allTables);
+                            resolve();
+                        } catch (error) {
+                            console.error('Error creating combined file:', error);
+                            showToast('Error creating combined file', 'error');
+                            resolve();
+                        }
+                    }
+                );
             });
         }
 
+        // Extract data from PDF using PDF.js
+        async function extractPdfData(file, detectTables) {
+            if (typeof pdfjsLib === 'undefined') {
+                throw new Error('PDF.js library not loaded');
+            }
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            
+            let extractedData = [];
+            
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                
+                let pageText = '';
+                let tables = [];
+                
+                if (detectTables) {
+                    const tableData = detectTablesInPage(textContent);
+                    tables = tableData.tables;
+                    pageText = tableData.remainingText;
+                } else {
+                    pageText = textContent.items.map(item => item.str).join(' ');
+                }
+                
+                extractedData.push({
+                    page: pageNum,
+                    text: pageText,
+                    tables: tables,
+                    fileName: file.name,
+                    items: textContent.items
+                });
+            }
+            
+            return extractedData;
+        }
+
+        // Enhanced table detection function
         function detectTablesInPage(textContent) {
             const items = textContent.items;
             const tables = [];
-            const rows = [];
-            let remainingText = [];
+            const remainingText = [];
 
             // Group items by y-coordinate (rows)
             const rowGroups = {};
             items.forEach(item => {
-                const y = Math.round(item.transform[5]);
+                const y = Math.round(item.transform[5] / 2) * 2; // Group nearby y-coordinates
                 if (!rowGroups[y]) rowGroups[y] = [];
                 rowGroups[y].push(item);
             });
 
-            // Sort rows by y-coordinate
+            // Sort rows by y-coordinate (top to bottom)
             const sortedRows = Object.keys(rowGroups).sort((a, b) => b - a).map(y => rowGroups[y]);
 
             // Detect table patterns
-            for (let i = 0; i < sortedRows.length; i++) {
-                const row = sortedRows[i].sort((a, b) => a.transform[4] - b.transform[4]);
+            const tableRows = [];
+            const nonTableRows = [];
+            
+            for (const row of sortedRows) {
+                const sortedRowItems = row.sort((a, b) => a.transform[4] - b.transform[4]);
                 
-                // Check if this looks like a table row (multiple items with consistent spacing)
-                if (row.length >= 2) {
-                    const spacing = [];
-                    for (let j = 1; j < row.length; j++) {
-                        spacing.push(row[j].transform[4] - row[j-1].transform[4]);
+                if (sortedRowItems.length >= 2) {
+                    // Calculate spacing between items
+                    const spacings = [];
+                    for (let j = 1; j < sortedRowItems.length; j++) {
+                        spacings.push(sortedRowItems[j].transform[4] - sortedRowItems[j-1].transform[4]);
                     }
                     
-                    // If spacing is relatively consistent, it's likely a table
-                    const avgSpacing = spacing.reduce((a, b) => a + b, 0) / spacing.length;
-                    const isConsistent = spacing.every(s => Math.abs(s - avgSpacing) < avgSpacing * 0.5);
+                    const avgSpacing = spacings.reduce((a, b) => a + b, 0) / spacings.length;
+                    const isConsistentSpacing = spacings.every(s => Math.abs(s - avgSpacing) < avgSpacing * 0.6);
                     
-                    if (isConsistent && row.length >= 2) {
-                        rows.push(row.map(item => item.str.trim()).filter(str => str));
+                    if (isConsistentSpacing && sortedRowItems.length >= 2 && avgSpacing > 20) {
+                        const cleanRow = sortedRowItems.map(item => item.str.trim()).filter(str => str);
+                        if (cleanRow.length >= 2) {
+                            tableRows.push(cleanRow);
+                        } else {
+                            nonTableRows.push(sortedRowItems.map(item => item.str).join(' '));
+                        }
                     } else {
-                        remainingText.push(row.map(item => item.str).join(' '));
+                        nonTableRows.push(sortedRowItems.map(item => item.str).join(' '));
                     }
                 } else {
-                    remainingText.push(row.map(item => item.str).join(' '));
+                    nonTableRows.push(row.map(item => item.str).join(' '));
                 }
             }
 
-            // Group consecutive table rows into tables
-            if (rows.length > 0) {
+            // Group consecutive table rows
+            if (tableRows.length > 0) {
                 let currentTable = [];
-                let expectedColumns = rows[0].length;
+                let expectedColumns = tableRows[0].length;
                 
-                for (const row of rows) {
-                    if (row.length === expectedColumns || Math.abs(row.length - expectedColumns) <= 1) {
+                for (const row of tableRows) {
+                    if (Math.abs(row.length - expectedColumns) <= 1) {
                         currentTable.push(row);
                     } else {
-                        if (currentTable.length > 1) {
+                        if (currentTable.length >= 2) {
                             tables.push(currentTable);
                         }
                         currentTable = [row];
@@ -2276,123 +2454,140 @@
                     }
                 }
                 
-                if (currentTable.length > 1) {
+                if (currentTable.length >= 2) {
                     tables.push(currentTable);
                 }
             }
 
             return {
                 tables: tables,
-                remainingText: remainingText.join('\n')
+                remainingText: nonTableRows.join('\n').trim()
             };
         }
 
-        async function createExcelFileWithTables(data, tables, filename) {
-            let csvContent = '';
+        // Download processed file with format-specific handling
+        async function downloadProcessedFile(data, filename, format, location, allTables = null) {
+            let blob;
             
-            if (tables.length > 0) {
-                // Add tables to CSV
-                tables.forEach((table, tableIndex) => {
-                    if (tableIndex > 0) csvContent += '\n';
-                    csvContent += `Table ${tableIndex + 1}\n`;
+            switch (format) {
+                case 'txt':
+                    const textContent = data.map(page => {
+                        let content = `--- Page ${page.page} ---\n${page.text}`;
+                        if (page.fileName) content = `--- ${page.fileName} - Page ${page.page} ---\n${page.text}`;
+                        return content;
+                    }).join('\n\n');
+                    blob = new Blob([textContent], { type: 'text/plain' });
+                    break;
                     
-                    table.forEach(row => {
-                        const escapedRow = row.map(cell => {
-                            const escaped = String(cell).replace(/"/g, '""');
-                            return `"${escaped}"`;
+                case 'csv':
+                    let csvContent = '';
+                    const tables = allTables || data.flatMap(page => page.tables || []);
+                    
+                    if (tables.length > 0) {
+                        tables.forEach((table, tableIndex) => {
+                            if (tableIndex > 0) csvContent += '\n';
+                            csvContent += `"Table ${tableIndex + 1}"\n`;
+                            
+                            table.forEach(row => {
+                                const escapedRow = row.map(cell => `"${String(cell).replace(/"/g, '""')}"`);
+                                csvContent += escapedRow.join(',') + '\n';
+                            });
+                            csvContent += '\n';
                         });
-                        csvContent += escapedRow.join(',') + '\n';
+                    } else {
+                        csvContent = 'Source,Page,Content\n';
+                        data.forEach(page => {
+                            const source = page.fileName || 'PDF';
+                            const escapedText = page.text.replace(/"/g, '""');
+                            csvContent += `"${source}",${page.page},"${escapedText}"\n`;
+                        });
+                    }
+                    blob = new Blob([csvContent], { type: 'text/csv' });
+                    break;
+                    
+                case 'json':
+                    const jsonData = {
+                        extractedAt: new Date().toISOString(),
+                        totalPages: data.length,
+                        files: data.reduce((acc, page) => {
+                            const fileName = page.fileName || 'unknown.pdf';
+                            if (!acc[fileName]) {
+                                acc[fileName] = { pages: [], tables: [] };
+                            }
+                            acc[fileName].pages.push({
+                                pageNumber: page.page,
+                                text: page.text,
+                                wordCount: page.text.split(/\s+/).length
+                            });
+                            if (page.tables) {
+                                acc[fileName].tables.push(...page.tables);
+                            }
+                            return acc;
+                        }, {}),
+                        tables: allTables || data.flatMap(page => page.tables || [])
+                    };
+                    blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+                    break;
+                    
+                case 'docx':
+                    // Simple Word document creation
+                    const wordContent = data.map(page => {
+                        let content = `Page ${page.page}\n${page.text}`;
+                        if (page.fileName) content = `${page.fileName} - Page ${page.page}\n${page.text}`;
+                        return content;
+                    }).join('\n\n');
+                    
+                    blob = new Blob([wordContent], { 
+                        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
                     });
-                    csvContent += '\n';
-                });
-            } else {
-                // Fallback to page-based content
-                csvContent = 'Page,Content\n';
-                data.forEach(page => {
-                    const escapedText = page.text.replace(/"/g, '""');
-                    csvContent += `${page.page},"${escapedText}"\n`;
-                });
+                    break;
+                    
+                default:
+                    throw new Error('Unsupported format');
             }
             
-            const blob = new Blob([csvContent], { 
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-            });
             downloadBlob(blob, filename);
         }
 
-        async function createCSVFileWithTables(data, tables, filename) {
-            let csvContent = '';
-            
-            if (tables.length > 0) {
-                tables.forEach((table, tableIndex) => {
-                    if (tableIndex > 0) csvContent += '\n';
-                    
-                    table.forEach(row => {
-                        const escapedRow = row.map(cell => {
-                            const escaped = String(cell).replace(/"/g, '""');
-                            return `"${escaped}"`;
-                        });
-                        csvContent += escapedRow.join(',') + '\n';
-                    });
-                });
-            } else {
-                csvContent = 'Page,Content\n';
-                data.forEach(page => {
-                    const escapedText = page.text.replace(/"/g, '""');
-                    csvContent += `${page.page},"${escapedText}"\n`;
-                });
-            }
-            
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            downloadBlob(blob, filename);
-        }
-
-        async function createTextFile(data, filename) {
-            const fullText = data.map(page => page.text).join('\n\n');
-            downloadTextAsTxt(fullText, filename);
-        }
-
-        async function createWordDocument(data, filename) {
-            const fullText = data.map(page => page.text).join('\n\n');
-            const wordContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-    <w:body>
-        <w:p>
-            <w:r>
-                <w:t>${fullText.replace(/\n/g, '</w:t></w:r></w:p><w:p><w:r><w:t>')}</w:t>
-            </w:r>
-        </w:p>
-    </w:body>
-</w:document>`;
-
-            const blob = new Blob([wordContent], { 
-                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-            });
-            downloadBlob(blob, filename);
-        }
-
-        async function createJSONFile(data, filename) {
-            const jsonData = {
-                document: filename.replace('.json', ''),
-                pages: data.length,
-                extractedAt: new Date().toISOString(),
-                content: data.map(page => ({
-                    pageNumber: page.page,
-                    text: page.text,
-                    tables: page.tables || [],
-                    wordCount: page.text.split(/\s+/).length
-                }))
+        function getExtensionForFormat(format) {
+            const extensions = {
+                'txt': '.txt',
+                'docx': '.docx',
+                'csv': '.csv',
+                'json': '.json'
             };
+            return extensions[format] || '.txt';
+        }
+
+        // Save As Modal Functions
+        function showSaveAsModal(title, defaultName, callback) {
+            document.getElementById('saveAsTitle').textContent = title;
+            document.getElementById('saveAsFileName').value = defaultName;
+            document.getElementById('saveAsModal').classList.add('active');
+            pendingSaveCallback = callback;
+        }
+
+        function hideSaveAsModal() {
+            document.getElementById('saveAsModal').classList.remove('active');
+            pendingSaveCallback = null;
+        }
+
+        function confirmSaveAs() {
+            const fileName = document.getElementById('saveAsFileName').value.trim();
+            const location = document.getElementById('saveAsLocation').value;
             
-            const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-            downloadBlob(blob, filename);
+            if (!fileName) {
+                showToast('Please enter a file name', 'error');
+                return;
+            }
+            
+            if (pendingSaveCallback) {
+                pendingSaveCallback(fileName, location);
+            }
+            hideSaveAsModal();
         }
 
-        function downloadTextAsTxt(text, filename) {
-            const blob = new Blob([text], { type: 'text/plain' });
-            downloadBlob(blob, filename);
-        }
-
+        // Enhanced downloadBlob function with location awareness
         function downloadBlob(blob, filename) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -2402,7 +2597,7 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }
+        } 
 
         // Convert to PDF Functions
         async function convertToPdf() {
