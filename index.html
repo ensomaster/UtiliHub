@@ -4547,6 +4547,417 @@ function cancelProcessing() {
         }
 		
     </script>
+	<script>
+// Set PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// PDF Converter functionality with actual processing
+let pdfFiles = [];
+
+// Initialize PDF converter when DOM is loaded
+function initializePdfConverter() {
+    const pdfFileInput = document.getElementById('pdfFileInput');
+    const pdfUploadArea = document.getElementById('pdfUploadArea');
+    
+    if (pdfFileInput) {
+        pdfFileInput.addEventListener('change', function(e) {
+            handlePdfFiles(e.target.files);
+        });
+    }
+    
+    if (pdfUploadArea) {
+        // Drag and drop handlers
+        pdfUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            pdfUploadArea.classList.add('dragover');
+        });
+
+        pdfUploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            pdfUploadArea.classList.remove('dragover');
+        });
+
+        pdfUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            pdfUploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            handlePdfFiles(files);
+        });
+    }
+    
+    updatePdfConvertButton();
+}
+
+function handlePdfFiles(files) {
+    const validFiles = [];
+    
+    for (let file of files) {
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+            validFiles.push(file);
+        } else {
+            showNotification(`"${file.name}" is not a valid PDF file. Only PDF files are accepted.`, 'error');
+        }
+    }
+    
+    if (validFiles.length > 0) {
+        // Check if single file mode is selected and multiple files are being added
+        const isSingleMode = document.getElementById('singlePdfOption').classList.contains('selected');
+        
+        if (isSingleMode && validFiles.length > 1) {
+            showNotification('Single file mode is selected. Please select only one PDF file, or switch to batch processing mode.', 'warning');
+            return;
+        }
+        
+        if (isSingleMode) {
+            pdfFiles = [validFiles[0]]; // Only keep the first file in single mode
+        } else {
+            pdfFiles = pdfFiles.concat(validFiles);
+        }
+        
+        displayPdfFiles();
+        updatePdfConvertButton();
+        showNotification(`${validFiles.length} PDF file(s) added successfully!`, 'success');
+    }
+}
+
+function displayPdfFiles() {
+    const fileList = document.getElementById('pdfFileList');
+    
+    if (pdfFiles.length === 0) {
+        fileList.style.display = 'none';
+        return;
+    }
+    
+    fileList.style.display = 'block';
+    fileList.innerHTML = '<h4>Selected Files:</h4>';
+    
+    pdfFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        
+        fileItem.innerHTML = `
+            <div>
+                <strong>${file.name}</strong>
+                <div style="font-size: 0.9em; color: #666;">
+                    ${(file.size / 1024 / 1024).toFixed(2)} MB
+                </div>
+            </div>
+            <button onclick="removePdfFile(${index})">Remove</button>
+        `;
+        
+        fileList.appendChild(fileItem);
+    });
+}
+
+function removePdfFile(index) {
+    pdfFiles.splice(index, 1);
+    displayPdfFiles();
+    updatePdfConvertButton();
+    showNotification('File removed successfully!', 'success');
+}
+
+function updatePdfConvertButton() {
+    const convertBtn = document.getElementById('convertPdfBtn');
+    if (convertBtn) {
+        convertBtn.disabled = pdfFiles.length === 0;
+        convertBtn.textContent = pdfFiles.length > 0 ? 
+            `Convert ${pdfFiles.length} PDF${pdfFiles.length > 1 ? 's' : ''}` : 
+            'Convert PDF';
+    }
+}
+
+function clearFiles(type) {
+    if (type === 'pdf') {
+        pdfFiles = [];
+        displayPdfFiles();
+        updatePdfConvertButton();
+        const pdfFileInput = document.getElementById('pdfFileInput');
+        if (pdfFileInput) {
+            pdfFileInput.value = '';
+        }
+        showNotification('All files cleared!', 'success');
+    }
+}
+
+function selectBatchOption(type, mode) {
+    if (type === 'pdf') {
+        const singleOption = document.getElementById('singlePdfOption');
+        const batchOption = document.getElementById('batchPdfOption');
+        const batchOptions = document.getElementById('batchProcessingOptions');
+        
+        if (mode === 'single') {
+            singleOption.classList.add('selected');
+            batchOption.classList.remove('selected');
+            batchOptions.style.display = 'none';
+            
+            // If more than one file is selected, keep only the first one
+            if (pdfFiles.length > 1) {
+                pdfFiles = [pdfFiles[0]];
+                displayPdfFiles();
+                updatePdfConvertButton();
+                showNotification('Switched to single file mode. Only first file kept.', 'info');
+            }
+        } else {
+            singleOption.classList.remove('selected');
+            batchOption.classList.add('selected');
+            batchOptions.style.display = 'block';
+        }
+    }
+}
+
+function selectCombineOption(mode) {
+    const radioButton = document.querySelector('input[name="combineMode"][value="' + mode + '"]');
+    if (radioButton) {
+        radioButton.checked = true;
+    }
+}
+
+// ACTUAL PDF PROCESSING FUNCTIONS
+async function convertPdfToFormat() {
+    if (pdfFiles.length === 0) {
+        showNotification('Please select at least one PDF file to convert.', 'error');
+        return;
+    }
+    
+    const outputFormat = document.getElementById('pdfOutputFormat').value;
+    const detectTables = document.getElementById('detectTables').checked;
+    const isBatchMode = document.getElementById('batchPdfOption').classList.contains('selected');
+    const combineMode = document.querySelector('input[name="combineMode"]:checked')?.value || 'combine';
+    
+    // Show processing message
+    const convertBtn = document.getElementById('convertPdfBtn');
+    const originalText = convertBtn.textContent;
+    convertBtn.textContent = 'Processing...';
+    convertBtn.disabled = true;
+    
+    try {
+        let allExtractedContent = [];
+        
+        // Process each PDF file
+        for (let i = 0; i < pdfFiles.length; i++) {
+            const file = pdfFiles[i];
+            showNotification(`Processing ${file.name}... (${i + 1}/${pdfFiles.length})`, 'info');
+            
+            const extractedData = await extractPdfContent(file, detectTables);
+            allExtractedContent.push({
+                filename: file.name,
+                content: extractedData
+            });
+        }
+        
+        // Convert to desired format and download
+        await downloadConvertedContent(allExtractedContent, outputFormat, isBatchMode && combineMode === 'combine');
+        
+        showNotification(`Successfully converted ${pdfFiles.length} PDF file(s) to ${outputFormat.toUpperCase()}!`, 'success');
+        
+    } catch (error) {
+        console.error('PDF conversion error:', error);
+        showNotification(`Error converting PDF: ${error.message}`, 'error');
+    } finally {
+        // Reset button
+        convertBtn.textContent = originalText;
+        convertBtn.disabled = false;
+    }
+}
+
+async function extractPdfContent(file, detectTables) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        fileReader.onload = async function() {
+            try {
+                const typedArray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                
+                let fullText = '';
+                let tableData = [];
+                
+                // Extract text from each page
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    
+                    let pageText = '';
+                    let pageItems = textContent.items;
+                    
+                    if (detectTables) {
+                        // Basic table detection - group text by similar Y coordinates
+                        const lines = groupTextByLines(pageItems);
+                        const tables = detectTablesInLines(lines);
+                        
+                        if (tables.length > 0) {
+                            tableData = tableData.concat(tables);
+                        }
+                        
+                        pageText = lines.map(line => line.map(item => item.str).join(' ')).join('\n');
+                    } else {
+                        pageText = pageItems.map(item => item.str).join(' ');
+                    }
+                    
+                    fullText += `\n--- Page ${pageNum} ---\n${pageText}\n`;
+                }
+                
+                resolve({
+                    text: fullText,
+                    tables: tableData,
+                    pageCount: pdf.numPages
+                });
+            } catch (error) {
+                reject(error);
+            }
+        };
+        fileReader.onerror = () => reject(new Error('Failed to read PDF file'));
+        fileReader.readAsArrayBuffer(file);
+    });
+}
+
+function groupTextByLines(textItems) {
+    const lines = {};
+    
+    textItems.forEach(item => {
+        const y = Math.round(item.transform[5]); // Y coordinate
+        if (!lines[y]) lines[y] = [];
+        lines[y].push(item);
+    });
+    
+    // Sort by Y coordinate (top to bottom) and X coordinate (left to right)
+    return Object.keys(lines)
+        .sort((a, b) => b - a)
+        .map(y => lines[y].sort((a, b) => a.transform[4] - b.transform[4]));
+}
+
+function detectTablesInLines(lines) {
+    const tables = [];
+    let currentTable = [];
+    
+    lines.forEach(line => {
+        // Simple table detection: if line has multiple items with similar spacing
+        if (line.length > 2) {
+            const spaces = [];
+            for (let i = 1; i < line.length; i++) {
+                spaces.push(line[i].transform[4] - line[i-1].transform[4]);
+            }
+            
+            // If spacing is relatively consistent, consider it a table row
+            const avgSpace = spaces.reduce((a, b) => a + b, 0) / spaces.length;
+            const isTableRow = spaces.every(space => Math.abs(space - avgSpace) < avgSpace * 0.5);
+            
+            if (isTableRow) {
+                currentTable.push(line.map(item => item.str));
+            } else if (currentTable.length > 0) {
+                tables.push([...currentTable]);
+                currentTable = [];
+            }
+        } else if (currentTable.length > 0) {
+            tables.push([...currentTable]);
+            currentTable = [];
+        }
+    });
+    
+    if (currentTable.length > 0) {
+        tables.push(currentTable);
+    }
+    
+    return tables;
+}
+
+async function downloadConvertedContent(extractedContent, format, combine) {
+    if (combine && extractedContent.length > 1) {
+        // Combine all content into one file
+        await downloadSingleFile(extractedContent, format, 'combined_pdfs');
+    } else {
+        // Create separate files
+        for (let content of extractedContent) {
+            await downloadSingleFile([content], format, content.filename.replace('.pdf', ''));
+        }
+    }
+}
+
+async function downloadSingleFile(contentArray, format, baseFilename) {
+    let fileContent = '';
+    let mimeType = 'text/plain';
+    let extension = format;
+    
+    switch (format) {
+        case 'txt':
+            fileContent = contentArray.map(item => 
+                `=== ${item.filename} ===\n${item.content.text}\n\n`
+            ).join('');
+            mimeType = 'text/plain';
+            break;
+            
+        case 'csv':
+            // Convert tables to CSV
+            let csvContent = '';
+            contentArray.forEach(item => {
+                csvContent += `"File: ${item.filename}"\n\n`;
+                if (item.content.tables && item.content.tables.length > 0) {
+                    item.content.tables.forEach((table, tableIndex) => {
+                        csvContent += `"Table ${tableIndex + 1}"\n`;
+                        table.forEach(row => {
+                            csvContent += row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',') + '\n';
+                        });
+                        csvContent += '\n';
+                    });
+                } else {
+                    // If no tables detected, convert text to simple CSV
+                    const lines = item.content.text.split('\n').filter(line => line.trim());
+                    lines.forEach(line => {
+                        csvContent += `"${line.replace(/"/g, '""')}"\n`;
+                    });
+                }
+                csvContent += '\n\n';
+            });
+            fileContent = csvContent;
+            mimeType = 'text/csv';
+            break;
+            
+        case 'json':
+            const jsonData = contentArray.map(item => ({
+                filename: item.filename,
+                pageCount: item.content.pageCount,
+                extractedText: item.content.text,
+                tables: item.content.tables || [],
+                extractedAt: new Date().toISOString()
+            }));
+            fileContent = JSON.stringify(jsonData, null, 2);
+            mimeType = 'application/json';
+            break;
+            
+        case 'docx':
+            showNotification('DOCX format requires server-side processing. Downloading as TXT instead.', 'warning');
+            fileContent = contentArray.map(item => 
+                `=== ${item.filename} ===\n${item.content.text}\n\n`
+            ).join('');
+            mimeType = 'text/plain';
+            extension = 'txt';
+            break;
+    }
+    
+    // Create and download file
+    const blob = new Blob([fileContent], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${baseFilename}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Simple notification function if you don't have one
+function showNotification(message, type) {
+    // You can replace this with your existing notification system
+    const alertType = type === 'error' ? 'Error: ' : 
+                     type === 'warning' ? 'Warning: ' : 
+                     type === 'success' ? 'Success: ' : 'Info: ';
+    alert(alertType + message);
+}
+</script>
 </body>
 </html>
                 
