@@ -285,7 +285,70 @@ if (typeof pdfjsLib !== 'undefined') {
             color: #666;
             font-size: 0.9em;
         }
-
+/* PDF Converter Specific Styles */
+        .batch-options {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+        }
+        .batch-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .batch-option:hover {
+            background-color: #f8f9fa;
+            border-color: #667eea;
+        }
+        .batch-option.selected {
+            background-color: #e3f2fd;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        .file-list {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .file-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .file-item button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        .file-item button:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
         /* Buttons */
         .btn {
             padding: 12px 30px;
@@ -1066,95 +1129,95 @@ if (typeof pdfjsLib !== 'undefined') {
         </div>
     </div>
 
-<!-- PDF Converter Modal -->
-    <div class="tool-modal" id="pdf-converter-modal">
-        <div class="tool-modal-content">
-            <div class="tool-modal-header">
-                <h2>📄 Convert PDFs </h2>
-                <button class="tool-modal-close" onclick="closeTool()">&times;</button>
-            </div>
-            <div class="tool-modal-body">
-                <p>Extract text, tables, and data from PDF files and convert to various formats with advanced table detection</p>
+	<!-- PDF Converter Modal -->
+<div class="tool-modal" id="pdf-converter-modal">
+    <div class="tool-modal-content">
+        <div class="tool-modal-header">
+            <h2>📄 Convert PDFs </h2>
+            <button class="tool-modal-close" onclick="closeTool()">&times;</button>
+        </div>
+        <div class="tool-modal-body">
+            <p>Extract text, tables, and data from PDF files and convert to various formats with advanced table detection</p>
 
-                <!-- Fixed Layout: Side by Side -->
-                <div class="pdf-converter-layout">
-                    <!-- Batch Options -->
-                    <div class="batch-options" id="pdfBatchOptions">
-                        <h4>Processing Options</h4>
-                        <div class="batch-option selected" id="singlePdfOption" onclick="selectBatchOption('pdf', 'single')">
-                            <div>
-                                <strong>Process Single File</strong>
-                                <div style="font-size: 0.9em; color: #666;">Convert one PDF at a time</div>
-                            </div>
-                            <div style="color: #28a745; font-weight: bold;">Available</div>
+            <!-- Fixed Layout: Side by Side -->
+            <div class="pdf-converter-layout">
+                <!-- Batch Options -->
+                <div class="batch-options" id="pdfBatchOptions">
+                    <h4>Processing Options</h4>
+                    <div class="batch-option selected" id="singlePdfOption" onclick="selectBatchOption('pdf', 'single')">
+                        <div>
+                            <strong>Process Single File</strong>
+                            <div style="font-size: 0.9em; color: #666;">Convert one PDF at a time</div>
                         </div>
-                        <div class="batch-option" id="batchPdfOption" onclick="selectBatchOption('pdf', 'batch')">
-                            <div>
-                                <strong>Process Multiple Files</strong>
-                                <div style="font-size: 0.9em; color: #666;" id="pdfBatchDescription">Batch convert multiple PDFs</div>
-                            </div>
-                            <div style="color: #dc3545; font-weight: bold;" id="pdfBatchStatus">Upgrade Required</div>
+                        <div style="color: #28a745; font-weight: bold;">Available</div>
+                    </div>
+                    <div class="batch-option" id="batchPdfOption" onclick="selectBatchOption('pdf', 'batch')">
+                        <div>
+                            <strong>Process Multiple Files</strong>
+                            <div style="font-size: 0.9em; color: #666;" id="pdfBatchDescription">Batch convert multiple PDFs</div>
                         </div>
-                        
-                        <!-- Batch Processing Options (shown only when batch is selected) -->
-                        <div id="batchProcessingOptions" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border: 1px solid #e9ecef;">
-                            <h5>Batch Processing Mode</h5>
-                            <div class="batch-option" id="combineOption" onclick="selectCombineOption('combine')">
-                                <div>
-                                    <strong>Combine All Files</strong>
-                                    <div style="font-size: 0.9em; color: #666;">Merge all PDFs into one output file</div>
-                                </div>
-                                <input type="radio" name="combineMode" value="combine" checked>
-                            </div>
-                            <div class="batch-option" id="separateOption" onclick="selectCombineOption('separate')">
-                                <div>
-                                    <strong>Process Separately</strong>
-                                    <div style="font-size: 0.9em; color: #666;">Convert each PDF to individual files</div>
-                                </div>
-                                <input type="radio" name="combineMode" value="separate">
-                            </div>
-                        </div>
+                        <div style="color: #dc3545; font-weight: bold;" id="pdfBatchStatus">Upgrade Required</div>
                     </div>
                     
-                    <div>
-                        <div class="upload-area" id="pdfUploadArea" onclick="document.getElementById('pdfFileInput').click()">
-                            <div class="upload-icon">📄</div>
-                            <div class="upload-text">Drag & drop your PDF files here or click to select</div>
-                            <div class="upload-subtext">Supports: .pdf files</div>
-                        </div>
-                        <input type="file" id="pdfFileInput" multiple accept=".pdf" style="display: none;">
-                        
-                        <div class="form-group">
-                            <label class="form-label">Output Format</label>
-                            <select class="form-control" id="pdfOutputFormat">
-                                <option value="txt">Plain Text (.txt)</option>
-                                <option value="docx">Word Document (.docx)</option>
-                                <option value="csv">CSV File (.csv)</option>
-                                <option value="json">JSON Data (.json)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <input type="checkbox" id="detectTables" checked> 
-                                Advanced Table Detection (Recommended for CSV)
-                            </label>
-                            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
-                                Automatically detects and preserves table structures in PDFs
+                    <!-- Batch Processing Options (shown only when batch is selected) -->
+                    <div id="batchProcessingOptions" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border: 1px solid #e9ecef;">
+                        <h5>Batch Processing Mode</h5>
+                        <div class="batch-option" id="combineOption" onclick="selectCombineOption('combine')">
+                            <div>
+                                <strong>Combine All Files</strong>
+                                <div style="font-size: 0.9em; color: #666;">Merge all PDFs into one output file</div>
                             </div>
+                            <input type="radio" name="combineMode" value="combine" checked>
+                        </div>
+                        <div class="batch-option" id="separateOption" onclick="selectCombineOption('separate')">
+                            <div>
+                                <strong>Process Separately</strong>
+                                <div style="font-size: 0.9em; color: #666;">Convert each PDF to individual files</div>
+                            </div>
+                            <input type="radio" name="combineMode" value="separate">
                         </div>
                     </div>
                 </div>
-
-                <div class="file-list" id="pdfFileList" style="display: none;"></div>
                 
-                <div style="text-align: center; margin: 20px 0;">
-                    <button class="btn btn-primary" id="convertPdfBtn" onclick="convertPdfToFormat()">Convert PDF</button>
-                    <button class="btn btn-secondary" onclick="clearFiles('pdf')">Clear Files</button>
+                <div>
+                    <div class="upload-area" id="pdfUploadArea" onclick="document.getElementById('pdfFileInput').click()">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">Drag & drop your PDF files here or click to select</div>
+                        <div class="upload-subtext">Supports: .pdf files</div>
+                    </div>
+                    <input type="file" id="pdfFileInput" multiple accept=".pdf" style="display: none;">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Output Format</label>
+                        <select class="form-control" id="pdfOutputFormat">
+                            <option value="txt">Plain Text (.txt)</option>
+                            <option value="docx">Word Document (.docx)</option>
+                            <option value="csv">CSV File (.csv)</option>
+                            <option value="json">JSON Data (.json)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="detectTables" checked> 
+                            Advanced Table Detection (Recommended for CSV)
+                        </label>
+                        <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                            Automatically detects and preserves table structures in PDFs
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <div class="file-list" id="pdfFileList" style="display: none;"></div>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <button class="btn btn-primary" id="convertPdfBtn" onclick="convertPdfToFormat()">Convert PDF</button>
+                <button class="btn btn-secondary" onclick="clearFiles('pdf')">Clear Files</button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- PDF to Formats Modal -->
     <div class="tool-modal" id="pdf-to-formats-modal">
@@ -1876,6 +1939,7 @@ if (typeof pdfjsLib !== 'undefined') {
             startTimer();
             updateBatchOptions();
             initializeImageEditor();
+			initializePdfConverter();
         });
 
         // Initialize Image Editor
@@ -4292,6 +4356,196 @@ function cancelProcessing() {
             initializeImageEditor();
             updateQrInputs();
         });
+
+		// PDF Converter functionality
+        let pdfFiles = [];
+
+        // Initialize PDF converter when DOM is loaded
+        function initializePdfConverter() {
+            const pdfFileInput = document.getElementById('pdfFileInput');
+            const pdfUploadArea = document.getElementById('pdfUploadArea');
+            
+            if (pdfFileInput) {
+                pdfFileInput.addEventListener('change', function(e) {
+                    handlePdfFiles(e.target.files);
+                });
+            }
+            
+            if (pdfUploadArea) {
+                // Drag and drop handlers
+                pdfUploadArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    pdfUploadArea.classList.add('dragover');
+                });
+
+                pdfUploadArea.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    pdfUploadArea.classList.remove('dragover');
+                });
+
+                pdfUploadArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    pdfUploadArea.classList.remove('dragover');
+                    
+                    const files = e.dataTransfer.files;
+                    handlePdfFiles(files);
+                });
+            }
+            
+            updatePdfConvertButton();
+        }
+
+        function handlePdfFiles(files) {
+            const validFiles = [];
+            
+            for (let file of files) {
+                if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                    validFiles.push(file);
+                } else {
+                    showNotification(`"${file.name}" is not a valid PDF file. Only PDF files are accepted.`, 'error');
+                }
+            }
+            
+            if (validFiles.length > 0) {
+                // Check if single file mode is selected and multiple files are being added
+                const isSingleMode = document.getElementById('singlePdfOption').classList.contains('selected');
+                
+                if (isSingleMode && validFiles.length > 1) {
+                    showNotification('Single file mode is selected. Please select only one PDF file, or switch to batch processing mode.', 'warning');
+                    return;
+                }
+                
+                if (isSingleMode) {
+                    pdfFiles = [validFiles[0]]; // Only keep the first file in single mode
+                } else {
+                    pdfFiles = pdfFiles.concat(validFiles);
+                }
+                
+                displayPdfFiles();
+                updatePdfConvertButton();
+                showNotification(`${validFiles.length} PDF file(s) added successfully!`, 'success');
+            }
+        }
+
+        function displayPdfFiles() {
+            const fileList = document.getElementById('pdfFileList');
+            
+            if (pdfFiles.length === 0) {
+                fileList.style.display = 'none';
+                return;
+            }
+            
+            fileList.style.display = 'block';
+            fileList.innerHTML = '<h4>Selected Files:</h4>';
+            
+            pdfFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                fileItem.innerHTML = `
+                    <div>
+                        <strong>${file.name}</strong>
+                        <div style="font-size: 0.9em; color: #666;">
+                            ${(file.size / 1024 / 1024).toFixed(2)} MB
+                        </div>
+                    </div>
+                    <button onclick="removePdfFile(${index})">Remove</button>
+                `;
+                
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function removePdfFile(index) {
+            pdfFiles.splice(index, 1);
+            displayPdfFiles();
+            updatePdfConvertButton();
+            showNotification('File removed successfully!', 'success');
+        }
+
+        function updatePdfConvertButton() {
+            const convertBtn = document.getElementById('convertPdfBtn');
+            if (convertBtn) {
+                convertBtn.disabled = pdfFiles.length === 0;
+                convertBtn.textContent = pdfFiles.length > 0 ? 
+                    `Convert ${pdfFiles.length} PDF${pdfFiles.length > 1 ? 's' : ''}` : 
+                    'Convert PDF';
+            }
+        }
+
+        function clearFiles(type) {
+            if (type === 'pdf') {
+                pdfFiles = [];
+                displayPdfFiles();
+                updatePdfConvertButton();
+                const pdfFileInput = document.getElementById('pdfFileInput');
+                if (pdfFileInput) {
+                    pdfFileInput.value = '';
+                }
+                showNotification('All files cleared!', 'success');
+            }
+        }
+
+        function selectBatchOption(type, mode) {
+            if (type === 'pdf') {
+                const singleOption = document.getElementById('singlePdfOption');
+                const batchOption = document.getElementById('batchPdfOption');
+                const batchOptions = document.getElementById('batchProcessingOptions');
+                
+                if (mode === 'single') {
+                    singleOption.classList.add('selected');
+                    batchOption.classList.remove('selected');
+                    batchOptions.style.display = 'none';
+                    
+                    // If more than one file is selected, keep only the first one
+                    if (pdfFiles.length > 1) {
+                        pdfFiles = [pdfFiles[0]];
+                        displayPdfFiles();
+                        updatePdfConvertButton();
+                        showNotification('Switched to single file mode. Only first file kept.', 'info');
+                    }
+                } else {
+                    singleOption.classList.remove('selected');
+                    batchOption.classList.add('selected');
+                    batchOptions.style.display = 'block';
+                }
+            }
+        }
+
+        function selectCombineOption(mode) {
+            const radioButton = document.querySelector('input[name="combineMode"][value="' + mode + '"]');
+            if (radioButton) {
+                radioButton.checked = true;
+            }
+        }
+
+        function convertPdfToFormat() {
+            if (pdfFiles.length === 0) {
+                showNotification('Please select at least one PDF file to convert.', 'error');
+                return;
+            }
+            
+            const outputFormat = document.getElementById('pdfOutputFormat').value;
+            const detectTables = document.getElementById('detectTables').checked;
+            const isBatchMode = document.getElementById('batchPdfOption').classList.contains('selected');
+            const combineMode = document.querySelector('input[name="combineMode"]:checked')?.value || 'combine';
+            
+            // Here you would implement the actual conversion logic
+            // For now, we'll just show what would happen
+            console.log('Converting PDFs:', {
+                files: pdfFiles.map(f => f.name),
+                outputFormat,
+                detectTables,
+                isBatchMode,
+                combineMode
+            });
+            
+            showNotification(`Ready to convert ${pdfFiles.length} PDF file(s) to ${outputFormat.toUpperCase()} format${detectTables ? ' with table detection' : ''}.`, 'success');
+        }
+		
     </script>
 </body>
 </html>
